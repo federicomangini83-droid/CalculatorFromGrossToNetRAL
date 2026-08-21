@@ -1,4 +1,3 @@
-@@ -1,440 +1,450 @@
 /* app.js v5 - audit interattivo + addizionale regionale progressiva. */
 
 let PARAMETRI = null;
