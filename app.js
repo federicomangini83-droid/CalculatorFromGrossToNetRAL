@@ -187,8 +187,18 @@ function generaAudit(chiave, r) {
     },
     irpefNetta: {
       t: "IRPEF netta",
-      b: `<code>${euro(r.irpefLorda)} - ${euro(r.detrLavoro)} - ${euro(r.ulterioreDetr)} = ${euro(r.irpefNetta)}</code>`,
-      f: "IRPEF lorda al netto delle detrazioni"
+      b:
+        `L'IRPEF netta parte dall'imposta lorda calcolata sul reddito imponibile ` +
+        `e sottrae le detrazioni spettanti:<br>` +
+        `<code>${euro(r.irpefLorda)} - ${euro(r.detrLavoro)} - ` +
+        `${euro(r.ulterioreDetr)} = ${euro(r.irpefNetta)}</code><br><br>` +
+        `Il reddito imponibile utilizzato a monte è determinato tenendo conto ` +
+        `degli oneri deducibili previsti dall'art. 10 TUIR.`,
+      f:
+        "Art. 10 TUIR per la determinazione del reddito imponibile; " +
+        "art. 11 TUIR per l'IRPEF lorda; " +
+        "art. 13 TUIR per la detrazione da lavoro dipendente; " +
+        "art. 1, commi 4-9, L. 207/2024 per il cuneo fiscale"
     },
     addReg: {
       t: "Addizionale regionale",
