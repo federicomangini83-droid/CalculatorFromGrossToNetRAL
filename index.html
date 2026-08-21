@@ -35,7 +35,6 @@
         <select id="tipoContratto"></select>
       </div>
 
-      <!-- Giorni: visibile solo se tempo determinato -->
       <div class="field" id="wrapGiorni" style="display:none;">
         <label for="giorni">Giorni di lavoro nell'anno (su 365)</label>
         <input type="number" id="giorni" value="365" min="1" max="365" step="1">
@@ -56,31 +55,12 @@
         <input type="number" id="addComunale" value="0" min="0" max="0.9" step="0.01">
       </div>
 
-      <h3 class="sez">Familiari a carico</h3>
-
-      <div class="field-inline">
-        <label><input type="checkbox" id="coniuge"> Coniuge a carico</label>
-      </div>
-
-      <div class="field">
-        <label for="numFigli">Figli a carico (21-29 anni)</label>
-        <input type="number" id="numFigli" value="0" min="0" step="1">
-      </div>
-      <div class="field-inline">
-        <label><input type="checkbox" id="figliDisabili"> I figli sono disabili (L.104)</label>
-      </div>
-
-      <div class="field">
-        <label for="numAltri">Altri familiari (ascendenti conviventi)</label>
-        <input type="number" id="numAltri" value="0" min="0" step="1">
-      </div>
-
       <h3 class="sez">Welfare / benefici</h3>
 
       <div class="field">
         <label for="fringeBenefit">Fringe benefit / welfare (&euro;/anno)</label>
         <input type="number" id="fringeBenefit" value="0" min="0" step="50">
-        <small class="hint">Esente fino 1.000&euro; (2.000&euro; con figli). Se sfora, tutto tassato.</small>
+        <small class="hint">Esente fino 1.000&euro;. Se sfora, l'intero importo &egrave; tassato.</small>
       </div>
 
       <div class="field">
@@ -101,20 +81,30 @@
     <section class="card output-card" id="risultati" style="display:none;">
       <h2>Risultato</h2>
 
-      <div class="highlight-box">
-        <div class="highlight">
-          <span class="label">Netto annuo (in busta)</span>
-          <span class="value" id="outNettoAnnuo">-</span>
-        </div>
-        <div class="highlight">
-          <span class="label">Netto mese ordinario (x12)</span>
-          <span class="value" id="outNettoOrd">-</span>
-        </div>
+      <!-- Netto annuo evidenziato -->
+      <div class="hero-netto">
+        <span class="hero-label">Netto annuo in busta</span>
+        <span class="hero-value" id="outNettoAnnuo">-</span>
+        <span class="hero-perc" id="outPercNetto"></span>
       </div>
 
-      <div class="mens-extra" id="wrapMensExtra" style="display:none;">
-        <span id="labelMensExtra">Netto 13&ordf;/14&ordf;/15&ordf;</span>
-        <strong id="outNettoExtra">-</strong>
+      <!-- Ripartizione mensile chiara -->
+      <div class="mens-panel">
+        <div class="mens-title">Come viene ripartito nell'anno</div>
+        <div class="mens-row mens-ord">
+          <div class="mens-left">
+            <span class="mens-num" id="badge12">12&times;</span>
+            <span class="mens-desc">Mensilit&agrave; ordinarie<br><small>includono detrazioni e crediti</small></span>
+          </div>
+          <span class="mens-euro" id="outNettoOrd">-</span>
+        </div>
+        <div class="mens-row mens-extra" id="rowExtra" style="display:none;">
+          <div class="mens-left">
+            <span class="mens-num" id="badgeExtra">1&times;</span>
+            <span class="mens-desc" id="descExtra">13&ordf; mensilit&agrave;<br><small>senza detrazioni: netto pi&ugrave; basso</small></span>
+          </div>
+          <span class="mens-euro" id="outNettoExtra">-</span>
+        </div>
       </div>
 
       <div class="chart-wrap"><canvas id="graficoTorta"></canvas></div>
@@ -126,6 +116,8 @@
           <tr><td><span class="dot dot-irpef"></span> IRPEF netta</td><td id="outIrpef">-</td></tr>
           <tr><td><span class="dot dot-addreg"></span> Addizionale regionale</td><td id="outAddReg">-</td></tr>
           <tr><td><span class="dot dot-addcom"></span> Addizionale comunale</td><td id="outAddCom">-</td></tr>
+          <tr class="riga-credito" id="rowCredito" style="display:none;">
+            <td>+ Crediti esenti (cuneo / bonus)</td><td id="outCrediti">-</td></tr>
           <tr class="riga-netto"><td><span class="dot dot-netto"></span> Netto in busta</td><td id="outNettoRiga">-</td></tr>
         </tbody>
       </table>
@@ -133,34 +125,48 @@
       <div class="dettaglio">
         <h3>Dettaglio del calcolo</h3>
         <ul>
-          <li>Imponibile fiscale <strong id="outImponibile">-</strong></li>
+          <li>Reddito complessivo (RAL &minus; contributi) <strong id="outImponibile">-</strong></li>
           <li>IRPEF lorda <strong id="outIrpefLorda">-</strong></li>
           <li>Detrazione lavoro dipendente <strong id="outDetrLav">-</strong></li>
-          <li>Detrazioni familiari <strong id="outDetrFam">-</strong></li>
+          <li id="liUlt">Ulteriore detrazione (cuneo fiscale) <strong id="outUltDetr">-</strong></li>
           <li>Totale tasse (IRPEF+addizionali) <strong id="outTotTasse">-</strong></li>
           <li>Aliquota effettiva <strong id="outAliqEff">-</strong></li>
         </ul>
       </div>
 
-      <!-- Voci extra: si SOMMANO, non sono nel netto in busta -->
+      <!-- CUNEO: somma integrativa (solo se spetta) -->
+      <div class="extra-box" id="boxSomma" style="display:none;">
+        <span>Somma integrativa cuneo (esente) &mdash; si aggiunge al netto</span>
+        <strong id="outSomma">-</strong>
+      </div>
       <div class="extra-box" id="boxBonus" style="display:none;">
-        <span>Bonus 100&euro; (trattamento integrativo) &mdash; si aggiunge</span>
+        <span>Trattamento integrativo (ex bonus 100&euro;) &mdash; si aggiunge</span>
         <strong id="outBonus">-</strong>
       </div>
-      <div class="extra-box" id="boxBenefici" style="display:none;">
-        <span id="labelBenefici">Benefici esenti (welfare + buoni pasto)</span>
-        <strong id="outBenefici">-</strong>
+
+      <!-- BENEFICI: sezioni separate + totale -->
+      <div class="benefici-panel" id="beneficiPanel" style="display:none;">
+        <div class="ben-title">Welfare e benefici (extra, non in busta)</div>
+        <div class="ben-row" id="benBuoni" style="display:none;">
+          <span class="ben-label">&#127869;&#65039; Buoni pasto</span>
+          <span class="ben-val" id="outBuoni">-</span>
+        </div>
+        <div class="ben-sub" id="benBuoniSub" style="display:none;"></div>
+        <div class="ben-row" id="benFringe" style="display:none;">
+          <span class="ben-label">&#127873; Fringe benefit / welfare</span>
+          <span class="ben-val" id="outFringe">-</span>
+        </div>
+        <div class="ben-sub" id="benFringeSub" style="display:none;"></div>
+        <div class="ben-row ben-tot">
+          <span class="ben-label">Totale benefici (esenti)</span>
+          <span class="ben-val" id="outBenTot">-</span>
+        </div>
       </div>
 
       <div class="tfr-box">
         <span class="tfr-label">TFR accantonato (figurativo, non in busta)</span>
         <span class="tfr-value" id="outTfr">-</span>
       </div>
-
-      <p class="nota-auu" id="notaAuu" style="display:none;">
-        &#8505;&#65039; Per i figli <strong>under 21</strong> non spetta la detrazione IRPEF ma
-        l'<strong>Assegno Unico Universale</strong> (erogato da INPS in base all'ISEE, fuori busta paga).
-      </p>
     </section>
 
   </main>
