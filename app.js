@@ -106,6 +106,7 @@ function eseguiCalcolo() {
     ral,
     aliquotaInps: determinaAliquotaInps(),
     aliquotaRegionale: regione.aliquota || null,
+    regioneConfig: regione,
     regioneScaglioni: regione.scaglioni || null,
     regioneTipoAddizionale: regione.tipo_addizionale || "aliquota_unica",
     regioneLabel: regione.label,
@@ -134,12 +135,17 @@ function generaAudit(chiave, r) {
     `<code>${euro(s.base)} x ${num(s.aliquota)}% = ${euro(s.imposta)}</code>`
   ).join("<br>");
 
-  const regionaleSpiegazione = r.addRegTipo === "scaglioni_progressivi"
-    ? `L'addizionale regionale di <b>${r.regioneLabel}</b> e calcolata progressivamente: ` +
-      `ogni aliquota si applica soltanto alla quota di reddito del relativo scaglione.<br><br>` +
-      `${regionaleRighe}<br><br><b>Totale = ${euro(r.addReg)}</b>`
-    : `La Regione ${r.regioneLabel} e temporaneamente configurata nel prototipo con aliquota unica:<br>` +
-      `${regionaleRighe}<br><br><b>Totale = ${euro(r.addReg)}</b>`;
+  const riduzioniRegionali = (r.addRegRiduzioni || [])
+    .filter(x => x.importo > 0)
+    .map(x => `<code>- ${euro(x.importo)} (${x.descrizione})</code>`)
+    .join("<br>");
+
+  let regionaleSpiegazione = `<b>${r.regioneLabel}</b><br><br>${regionaleRighe || "Nessuna imposta dovuta."}`;
+  if (riduzioniRegionali) regionaleSpiegazione += `<br>${riduzioniRegionali}`;
+  regionaleSpiegazione += `<br><br><b>Totale = ${euro(r.addReg)}</b>`;
+  if (r.addRegNotaSemplificazione) {
+    regionaleSpiegazione += `<br><br><b>Semplificazione:</b> ${r.addRegNotaSemplificazione}`;
+  }
 
   const audit = {
     ral: {
