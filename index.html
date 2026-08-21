@@ -15,16 +15,14 @@
 
   <main class="container">
 
-    <!-- ============ COLONNA INPUT ============ -->
+    <!-- ============ INPUT ============ -->
     <section class="card input-card">
       <h2>Dati di ingresso</h2>
 
       <div class="field">
         <label for="ral">Retribuzione Annua Lorda (RAL)</label>
-        <div class="input-euro">
-          <span>&euro;</span>
-          <input type="number" id="ral" value="30000" min="0" step="500">
-        </div>
+        <div class="input-euro"><span>&euro;</span>
+          <input type="number" id="ral" value="30000" min="0" step="500"></div>
       </div>
 
       <div class="field">
@@ -35,6 +33,12 @@
       <div class="field">
         <label for="tipoContratto">Tipo di contratto</label>
         <select id="tipoContratto"></select>
+      </div>
+
+      <!-- Giorni: visibile solo se tempo determinato -->
+      <div class="field" id="wrapGiorni" style="display:none;">
+        <label for="giorni">Giorni di lavoro nell'anno (su 365)</label>
+        <input type="number" id="giorni" value="365" min="1" max="365" step="1">
       </div>
 
       <div class="field">
@@ -52,72 +56,111 @@
         <input type="number" id="addComunale" value="0" min="0" max="0.9" step="0.01">
       </div>
 
+      <h3 class="sez">Familiari a carico</h3>
+
+      <div class="field-inline">
+        <label><input type="checkbox" id="coniuge"> Coniuge a carico</label>
+      </div>
+
+      <div class="field">
+        <label for="numFigli">Figli a carico (21-29 anni)</label>
+        <input type="number" id="numFigli" value="0" min="0" step="1">
+      </div>
+      <div class="field-inline">
+        <label><input type="checkbox" id="figliDisabili"> I figli sono disabili (L.104)</label>
+      </div>
+
+      <div class="field">
+        <label for="numAltri">Altri familiari (ascendenti conviventi)</label>
+        <input type="number" id="numAltri" value="0" min="0" step="1">
+      </div>
+
+      <h3 class="sez">Welfare / benefici</h3>
+
+      <div class="field">
+        <label for="fringeBenefit">Fringe benefit / welfare (&euro;/anno)</label>
+        <input type="number" id="fringeBenefit" value="0" min="0" step="50">
+        <small class="hint">Esente fino 1.000&euro; (2.000&euro; con figli). Se sfora, tutto tassato.</small>
+      </div>
+
+      <div class="field">
+        <label for="tipoBuonoPasto">Buoni pasto</label>
+        <select id="tipoBuonoPasto"></select>
+      </div>
+      <div class="field" id="wrapBuono" style="display:none;">
+        <label for="valoreBuono">Valore buono (&euro;/giorno)</label>
+        <input type="number" id="valoreBuono" value="8" min="0" step="0.5">
+        <label for="giorniBuono" style="margin-top:8px;">Giorni con buono (anno)</label>
+        <input type="number" id="giorniBuono" value="220" min="0" step="1">
+      </div>
+
       <button id="btnCalcola" class="btn-calcola">Calcola</button>
     </section>
 
-    <!-- ============ COLONNA OUTPUT ============ -->
+    <!-- ============ OUTPUT ============ -->
     <section class="card output-card" id="risultati" style="display:none;">
       <h2>Risultato</h2>
 
       <div class="highlight-box">
         <div class="highlight">
-          <span class="label">Netto annuo</span>
+          <span class="label">Netto annuo (in busta)</span>
           <span class="value" id="outNettoAnnuo">-</span>
         </div>
         <div class="highlight">
-          <span class="label">Netto mensile</span>
-          <span class="value" id="outNettoMensile">-</span>
+          <span class="label">Netto mese ordinario (x12)</span>
+          <span class="value" id="outNettoOrd">-</span>
         </div>
       </div>
 
-      <div class="chart-wrap">
-        <canvas id="graficoTorta"></canvas>
+      <div class="mens-extra" id="wrapMensExtra" style="display:none;">
+        <span id="labelMensExtra">Netto 13&ordf;/14&ordf;/15&ordf;</span>
+        <strong id="outNettoExtra">-</strong>
       </div>
+
+      <div class="chart-wrap"><canvas id="graficoTorta"></canvas></div>
 
       <table class="tabella-voci">
         <tbody>
-          <tr class="riga-ral">
-            <td>RAL (lordo)</td>
-            <td id="outRal">-</td>
-          </tr>
-          <tr>
-            <td><span class="dot dot-inps"></span> Contributi INPS</td>
-            <td id="outInps">-</td>
-          </tr>
-          <tr>
-            <td><span class="dot dot-irpef"></span> IRPEF netta</td>
-            <td id="outIrpef">-</td>
-          </tr>
-          <tr>
-            <td><span class="dot dot-addreg"></span> Addizionale regionale</td>
-            <td id="outAddReg">-</td>
-          </tr>
-          <tr>
-            <td><span class="dot dot-addcom"></span> Addizionale comunale</td>
-            <td id="outAddCom">-</td>
-          </tr>
-          <tr class="riga-netto">
-            <td><span class="dot dot-netto"></span> Netto in tasca</td>
-            <td id="outNettoRiga">-</td>
-          </tr>
+          <tr class="riga-ral"><td>RAL (lordo)</td><td id="outRal">-</td></tr>
+          <tr><td><span class="dot dot-inps"></span> Contributi INPS</td><td id="outInps">-</td></tr>
+          <tr><td><span class="dot dot-irpef"></span> IRPEF netta</td><td id="outIrpef">-</td></tr>
+          <tr><td><span class="dot dot-addreg"></span> Addizionale regionale</td><td id="outAddReg">-</td></tr>
+          <tr><td><span class="dot dot-addcom"></span> Addizionale comunale</td><td id="outAddCom">-</td></tr>
+          <tr class="riga-netto"><td><span class="dot dot-netto"></span> Netto in busta</td><td id="outNettoRiga">-</td></tr>
         </tbody>
       </table>
 
       <div class="dettaglio">
         <h3>Dettaglio del calcolo</h3>
         <ul>
-          <li>Imponibile fiscale (RAL - contributi): <strong id="outImponibile">-</strong></li>
-          <li>IRPEF lorda: <strong id="outIrpefLorda">-</strong></li>
-          <li>Detrazioni lavoro dipendente: <strong id="outDetrazioni">-</strong></li>
-          <li>Totale tasse (IRPEF + addizionali): <strong id="outTotTasse">-</strong></li>
-          <li>Aliquota effettiva: <strong id="outAliquotaEff">-</strong></li>
+          <li>Imponibile fiscale <strong id="outImponibile">-</strong></li>
+          <li>IRPEF lorda <strong id="outIrpefLorda">-</strong></li>
+          <li>Detrazione lavoro dipendente <strong id="outDetrLav">-</strong></li>
+          <li>Detrazioni familiari <strong id="outDetrFam">-</strong></li>
+          <li>Totale tasse (IRPEF+addizionali) <strong id="outTotTasse">-</strong></li>
+          <li>Aliquota effettiva <strong id="outAliqEff">-</strong></li>
         </ul>
       </div>
 
+      <!-- Voci extra: si SOMMANO, non sono nel netto in busta -->
+      <div class="extra-box" id="boxBonus" style="display:none;">
+        <span>Bonus 100&euro; (trattamento integrativo) &mdash; si aggiunge</span>
+        <strong id="outBonus">-</strong>
+      </div>
+      <div class="extra-box" id="boxBenefici" style="display:none;">
+        <span id="labelBenefici">Benefici esenti (welfare + buoni pasto)</span>
+        <strong id="outBenefici">-</strong>
+      </div>
+
       <div class="tfr-box">
-        <span class="tfr-label">TFR accantonato (figurativo, non in busta paga)</span>
+        <span class="tfr-label">TFR accantonato (figurativo, non in busta)</span>
         <span class="tfr-value" id="outTfr">-</span>
       </div>
+
+      <p class="nota-auu" id="notaAuu" style="display:none;">
+        &#8505;&#65039; Per i figli <strong>under 21</strong> non spetta la detrazione IRPEF ma
+        l'<strong>Assegno Unico Universale</strong> (erogato da INPS in base all'ISEE, fuori busta paga).
+      </p>
     </section>
 
   </main>
@@ -126,7 +169,6 @@
     <p>Stima indicativa a scopo dimostrativo. Non sostituisce la busta paga reale.</p>
   </footer>
 
-  <!-- Chart.js da CDN per il grafico a torta -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="calcolo.js"></script>
   <script src="app.js"></script>
