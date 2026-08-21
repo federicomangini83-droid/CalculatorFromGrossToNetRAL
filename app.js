@@ -96,6 +96,7 @@ function mostraRisultati(r) {
   // tabella
   document.getElementById("outRal").textContent = euro(r.ral);
   document.getElementById("outInps").textContent = euro(r.contributiInps);
+  document.getElementById("outLordoPost").textContent = euro(r.imponibileFiscale);
   document.getElementById("outIrpef").textContent = euro(r.irpefNetta);
   document.getElementById("outAddReg").textContent = euro(r.addReg);
   document.getElementById("outAddCom").textContent = euro(r.addCom);
@@ -132,7 +133,6 @@ function mostraRisultati(r) {
   if (haBuoni || haFringe) {
     document.getElementById("beneficiPanel").style.display = "block";
 
-    // Buoni pasto
     if (haBuoni) {
       document.getElementById("benBuoni").style.display = "flex";
       document.getElementById("benBuoniSub").style.display = "block";
@@ -146,7 +146,6 @@ function mostraRisultati(r) {
       document.getElementById("benBuoniSub").style.display = "none";
     }
 
-    // Fringe benefit
     if (haFringe) {
       document.getElementById("benFringe").style.display = "flex";
       document.getElementById("benFringeSub").style.display = "block";
