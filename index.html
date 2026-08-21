@@ -79,29 +79,27 @@
 
     <!-- ============ OUTPUT ============ -->
     <section class="card output-card" id="risultati" style="display:none;">
-      <h2>Risultato</h2>
+      <h2>Risultato <small class="audit-hint">clicca la &#9432; per l'audit di ogni voce</small></h2>
 
-      <!-- Netto annuo evidenziato -->
       <div class="hero-netto">
         <span class="hero-label">Netto annuo in busta</span>
         <span class="hero-value" id="outNettoAnnuo">-</span>
         <span class="hero-perc" id="outPercNetto"></span>
       </div>
 
-      <!-- Ripartizione mensile chiara -->
       <div class="mens-panel">
         <div class="mens-title">Come viene ripartito nell'anno</div>
         <div class="mens-row mens-ord">
           <div class="mens-left">
             <span class="mens-num" id="badge12">12&times;</span>
-            <span class="mens-desc">Mensilit&agrave; ordinarie<br><small>includono detrazioni e crediti</small></span>
+            <span class="mens-desc">Mensilit&agrave; ordinarie <i class="info" data-audit="mensOrd">&#9432;</i><br><small>includono detrazioni e crediti</small></span>
           </div>
           <span class="mens-euro" id="outNettoOrd">-</span>
         </div>
         <div class="mens-row mens-extra" id="rowExtra" style="display:none;">
           <div class="mens-left">
             <span class="mens-num" id="badgeExtra">1&times;</span>
-            <span class="mens-desc" id="descExtra">13&ordf; mensilit&agrave;<br><small>senza detrazioni: netto pi&ugrave; basso</small></span>
+            <span class="mens-desc" id="descExtra">13&ordf; mensilit&agrave; <i class="info" data-audit="mensExtra">&#9432;</i><br><small>senza detrazioni: netto pi&ugrave; basso</small></span>
           </div>
           <span class="mens-euro" id="outNettoExtra">-</span>
         </div>
@@ -111,50 +109,48 @@
 
       <table class="tabella-voci">
         <tbody>
-          <tr class="riga-ral"><td>RAL (lordo)</td><td id="outRal">-</td></tr>
-          <tr><td><span class="dot dot-inps"></span> Contributi INPS</td><td id="outInps">-</td></tr>
-          <tr class="riga-lordopost"><td>= Lordo post contributi (imponibile)</td><td id="outLordoPost">-</td></tr>
-          <tr><td><span class="dot dot-irpef"></span> IRPEF netta</td><td id="outIrpef">-</td></tr>
-          <tr><td><span class="dot dot-addreg"></span> Addizionale regionale</td><td id="outAddReg">-</td></tr>
-          <tr><td><span class="dot dot-addcom"></span> Addizionale comunale</td><td id="outAddCom">-</td></tr>
+          <tr class="riga-ral"><td>RAL (lordo) <i class="info" data-audit="ral">&#9432;</i></td><td id="outRal">-</td></tr>
+          <tr><td><span class="dot dot-inps"></span> Contributi INPS <i class="info" data-audit="inps">&#9432;</i></td><td id="outInps">-</td></tr>
+          <tr class="riga-lordopost"><td>= Lordo post contributi (imponibile) <i class="info" data-audit="imponibile">&#9432;</i></td><td id="outLordoPost">-</td></tr>
+          <tr><td><span class="dot dot-irpef"></span> IRPEF netta <i class="info" data-audit="irpefNetta">&#9432;</i></td><td id="outIrpef">-</td></tr>
+          <tr><td><span class="dot dot-addreg"></span> Addizionale regionale <i class="info" data-audit="addReg">&#9432;</i></td><td id="outAddReg">-</td></tr>
+          <tr><td><span class="dot dot-addcom"></span> Addizionale comunale <i class="info" data-audit="addCom">&#9432;</i></td><td id="outAddCom">-</td></tr>
           <tr class="riga-credito" id="rowCredito" style="display:none;">
-            <td>+ Crediti esenti (cuneo / bonus)</td><td id="outCrediti">-</td></tr>
-          <tr class="riga-netto"><td><span class="dot dot-netto"></span> Netto in busta</td><td id="outNettoRiga">-</td></tr>
+            <td>+ Crediti esenti (cuneo / bonus) <i class="info" data-audit="crediti">&#9432;</i></td><td id="outCrediti">-</td></tr>
+          <tr class="riga-netto"><td><span class="dot dot-netto"></span> Netto in busta <i class="info" data-audit="netto">&#9432;</i></td><td id="outNettoRiga">-</td></tr>
         </tbody>
       </table>
 
       <div class="dettaglio">
         <h3>Dettaglio del calcolo</h3>
         <ul>
-          <li>Reddito complessivo (RAL &minus; contributi) <strong id="outImponibile">-</strong></li>
-          <li>IRPEF lorda <strong id="outIrpefLorda">-</strong></li>
-          <li>Detrazione lavoro dipendente <strong id="outDetrLav">-</strong></li>
-          <li id="liUlt">Ulteriore detrazione (cuneo fiscale) <strong id="outUltDetr">-</strong></li>
-          <li>Totale tasse (IRPEF+addizionali) <strong id="outTotTasse">-</strong></li>
-          <li>Aliquota effettiva <strong id="outAliqEff">-</strong></li>
+          <li>Reddito complessivo (RAL &minus; contributi) <i class="info" data-audit="imponibile">&#9432;</i> <strong id="outImponibile">-</strong></li>
+          <li>IRPEF lorda <i class="info" data-audit="irpefLorda">&#9432;</i> <strong id="outIrpefLorda">-</strong></li>
+          <li>Detrazione lavoro dipendente <i class="info" data-audit="detrLav">&#9432;</i> <strong id="outDetrLav">-</strong></li>
+          <li id="liUlt">Ulteriore detrazione (cuneo fiscale) <i class="info" data-audit="ultDetr">&#9432;</i> <strong id="outUltDetr">-</strong></li>
+          <li>Totale tasse (IRPEF+addizionali) <i class="info" data-audit="totTasse">&#9432;</i> <strong id="outTotTasse">-</strong></li>
+          <li>Aliquota effettiva <i class="info" data-audit="aliqEff">&#9432;</i> <strong id="outAliqEff">-</strong></li>
         </ul>
       </div>
 
-      <!-- CUNEO: somma integrativa (solo se spetta) -->
       <div class="extra-box" id="boxSomma" style="display:none;">
-        <span>Somma integrativa cuneo (esente) &mdash; si aggiunge al netto</span>
+        <span>Somma integrativa cuneo (esente) &mdash; si aggiunge al netto <i class="info" data-audit="sommaInt">&#9432;</i></span>
         <strong id="outSomma">-</strong>
       </div>
       <div class="extra-box" id="boxBonus" style="display:none;">
-        <span>Trattamento integrativo (ex bonus 100&euro;) &mdash; si aggiunge</span>
+        <span>Trattamento integrativo (ex bonus 100&euro;) &mdash; si aggiunge <i class="info" data-audit="trattInt">&#9432;</i></span>
         <strong id="outBonus">-</strong>
       </div>
 
-      <!-- BENEFICI: sezioni separate + totale -->
       <div class="benefici-panel" id="beneficiPanel" style="display:none;">
         <div class="ben-title">Welfare e benefici (extra, non in busta)</div>
         <div class="ben-row" id="benBuoni" style="display:none;">
-          <span class="ben-label">&#127869;&#65039; Buoni pasto</span>
+          <span class="ben-label">&#127869;&#65039; Buoni pasto <i class="info" data-audit="buoni">&#9432;</i></span>
           <span class="ben-val" id="outBuoni">-</span>
         </div>
         <div class="ben-sub" id="benBuoniSub" style="display:none;"></div>
         <div class="ben-row" id="benFringe" style="display:none;">
-          <span class="ben-label">&#127873; Fringe benefit / welfare</span>
+          <span class="ben-label">&#127873; Fringe benefit / welfare <i class="info" data-audit="fringe">&#9432;</i></span>
           <span class="ben-val" id="outFringe">-</span>
         </div>
         <div class="ben-sub" id="benFringeSub" style="display:none;"></div>
@@ -165,7 +161,7 @@
       </div>
 
       <div class="tfr-box">
-        <span class="tfr-label">TFR accantonato (figurativo, non in busta)</span>
+        <span class="tfr-label">TFR accantonato (figurativo, non in busta) <i class="info" data-audit="tfr">&#9432;</i></span>
         <span class="tfr-value" id="outTfr">-</span>
       </div>
     </section>
@@ -175,6 +171,13 @@
   <footer class="footer">
     <p>Stima indicativa a scopo dimostrativo. Non sostituisce la busta paga reale.</p>
   </footer>
+
+  <!-- Popover audit -->
+  <div id="auditPopover" class="audit-popover" style="display:none;">
+    <div class="audit-head"><span id="auditTitle"></span><span class="audit-close" id="auditClose">&times;</span></div>
+    <div class="audit-body" id="auditBody"></div>
+    <div class="audit-fonte" id="auditFonte"></div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="calcolo.js"></script>
