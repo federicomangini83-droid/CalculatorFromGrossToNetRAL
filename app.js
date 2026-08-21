@@ -1,12 +1,5 @@
-/*
- * app.js v6.2
- * Interfaccia, audit e visualizzazione risultati.
- *
- * Correzione mensilita aggiuntive:
- * - 13a, 14a e 15a non sottraggono direttamente le addizionali;
- * - le addizionali restano incluse nel netto annuo;
- * - l'audit mostra lordo - INPS - IRPEF.
- */
+@@ -1,440 +1,450 @@
+/* app.js v5 - audit interattivo + addizionale regionale progressiva. */
 
 let PARAMETRI = null;
 let OPZIONI = null;
@@ -30,49 +23,46 @@ function num(n, decimali = 2) {
 }
 
 async function inizializza() {
-  try {
-    const [parametri, opzioni] = await Promise.all([
-      fetch("data/parametri.json?v=6.2").then(controllaRisposta),
-      fetch("data/opzioni.json?v=6.2").then(controllaRisposta)
-    ]);
+  const [parametri, opzioni] = await Promise.all([
+    fetch("data/parametri.json").then(r => r.json()),
+    fetch("data/opzioni.json").then(r => r.json())
+  ]);
 
-    PARAMETRI = parametri;
-    OPZIONI = opzioni;
+  PARAMETRI = parametri;
+  OPZIONI = opzioni;
 
-    popolaSelect("mensilita", OPZIONI.mensilita, 13);
-    popolaSelect("tipoContratto", OPZIONI.tipo_contratto, "indeterminato");
-    popolaSelect("dimensioneAzienda", OPZIONI.dimensione_azienda, "fino15");
-    popolaSelect("regione", OPZIONI.regioni, "toscana");
-    popolaSelect("tipoBuonoPasto", OPZIONI.tipo_buono_pasto, "nessuno");
+  popolaSelect("mensilita", OPZIONI.mensilita, 13);
+  popolaSelect("tipoContratto", OPZIONI.tipo_contratto, "indeterminato");
+  popolaSelect("dimensioneAzienda", OPZIONI.dimensione_azienda, "fino15");
+  popolaSelect("regione", OPZIONI.regioni, "toscana");
+  popolaSelect("tipoBuonoPasto", OPZIONI.tipo_buono_pasto, "nessuno");
 
-    document.getElementById("tipoContratto").addEventListener("change", toggleGiorni);
-    document.getElementById("tipoBuonoPasto").addEventListener("change", toggleBuono);
-    document.getElementById("btnCalcola").addEventListener("click", eseguiCalcolo);
+  document.getElementById("tipoContratto").addEventListener("change", toggleGiorni);
+  document.getElementById("tipoBuonoPasto").addEventListener("change", toggleBuono);
+  document.getElementById("btnCalcola").addEventListener("click", eseguiCalcolo);
 
-    document.addEventListener("click", gestisciClickPagina);
-    document.getElementById("auditClose").addEventListener("click", chiudiAudit);
-  } catch (errore) {
-    console.error(errore);
-    alert("Impossibile caricare i file di configurazione. Apri il progetto tramite un server web.");
-  }
-}
+  document.addEventListener("click", e => {
+    const info = e.target.closest(".info");
+    if (info) {
+      e.stopPropagation();
+      apriAudit(info);
+      return;
+    }
+    if (!e.target.closest("#auditPopover")) chiudiAudit();
+  });
 
-async function controllaRisposta(risposta) {
-  if (!risposta.ok) {
-    throw new Error(`Errore HTTP ${risposta.status}`);
-  }
-  return risposta.json();
+  const close = document.getElementById("auditClose");
+  if (close) close.addEventListener("click", chiudiAudit);
 }
 
 function popolaSelect(id, lista, defaultId) {
   const select = document.getElementById(id);
   select.innerHTML = "";
-
   for (const elemento of lista) {
     const option = document.createElement("option");
     option.value = elemento.id;
     option.textContent = elemento.label;
-    option.selected = elemento.id === defaultId;
+    if (elemento.id === defaultId) option.selected = true;
     select.appendChild(option);
   }
 }
@@ -99,13 +89,11 @@ function determinaAliquotaInps() {
   const dimensione = OPZIONI.dimensione_azienda.find(
     d => d.id === document.getElementById("dimensioneAzienda").value
   );
-
   return PARAMETRI.contributi_inps[dimensione.aliquota_inps_key];
 }
 
 function eseguiCalcolo() {
   const ral = parseFloat(document.getElementById("ral").value);
-
   if (!Number.isFinite(ral) || ral <= 0) {
     alert("Inserisci una RAL valida.");
     return;
@@ -139,316 +127,215 @@ function eseguiCalcolo() {
   mostraRisultati(ULTIMO);
 }
 
-function gestisciClickPagina(evento) {
-  const info = evento.target.closest(".info");
-
-  if (info) {
-    evento.stopPropagation();
-    apriAudit(info);
-    return;
-  }
-
-  if (!evento.target.closest("#auditPopover")) {
-    chiudiAudit();
-  }
-}
-
-function creaRigheCalcolo(dettaglio) {
-  if (!Array.isArray(dettaglio) || dettaglio.length === 0) {
-    return "Nessuna imposta dovuta.";
-  }
-
-  return dettaglio.map(riga =>
-    `<code>${euro(riga.base)} × ${num(riga.aliquota)}% = ${euro(riga.imposta)}</code>`
-  ).join("<br>");
-}
-
 function generaAudit(chiave, r) {
-  const righeIrpef = creaRigheCalcolo(r.irpefDettaglio);
-  const righeRegionali = creaRigheCalcolo(r.addRegDettaglio);
+  const irpefRighe = r.irpefDettaglio.map(s =>
+    `<code>${num(s.aliquota)}% x ${euro(s.base)} = ${euro(s.imposta)}</code>`
+  ).join("<br>");
+
+  const regionaleRighe = r.addRegDettaglio.map(s =>
+    `<code>${euro(s.base)} x ${num(s.aliquota)}% = ${euro(s.imposta)}</code>`
+  ).join("<br>");
 
   const riduzioniRegionali = (r.addRegRiduzioni || [])
-    .filter(voce => voce.importo > 0)
-    .map(voce => `<code>− ${euro(voce.importo)} (${voce.descrizione})</code>`)
+    .filter(x => x.importo > 0)
+    .map(x => `<code>- ${euro(x.importo)} (${x.descrizione})</code>`)
     .join("<br>");
 
-  let spiegazioneRegionale =
-    `<b>${r.regioneLabel}</b><br><br>${righeRegionali}`;
-
-  if (riduzioniRegionali) {
-    spiegazioneRegionale += `<br>${riduzioniRegionali}`;
-  }
-
-  spiegazioneRegionale += `<br><br><b>Totale = ${euro(r.addReg)}</b>`;
-
+  let regionaleSpiegazione = `<b>${r.regioneLabel}</b><br><br>${regionaleRighe || "Nessuna imposta dovuta."}`;
+  if (riduzioniRegionali) regionaleSpiegazione += `<br>${riduzioniRegionali}`;
+  regionaleSpiegazione += `<br><br><b>Totale = ${euro(r.addReg)}</b>`;
   if (r.addRegNotaSemplificazione) {
-    spiegazioneRegionale +=
-      `<br><br><b>Semplificazione:</b> ${r.addRegNotaSemplificazione}`;
+    regionaleSpiegazione += `<br><br><b>Semplificazione:</b> ${r.addRegNotaSemplificazione}`;
   }
 
   const audit = {
     ral: {
       t: "RAL (lordo)",
-      b:
-        `Retribuzione Annua Lorda inserita: <b>${euro(r.ral)}</b>.<br>` +
-        `È il punto di partenza prima delle trattenute.`,
+      b: `Retribuzione Annua Lorda inserita: <b>${euro(r.ral)}</b>. E il punto di partenza prima delle trattenute.`,
       f: "Dato di input"
     },
-
     inps: {
       t: "Contributi INPS",
-      b:
-        `<code>${euro(r.ral)} × ${num(r.aliquotaInps)}% = ${euro(r.contributiInps)}</code><br>` +
-        `L'aliquota dipende dal contratto e dalla dimensione aziendale.`,
-      f: "Tabelle contributive INPS e Circolare INPS n. 6/2026"
+      b: `<code>${euro(r.ral)} x ${num(r.aliquotaInps)}% = ${euro(r.contributiInps)}</code><br>` +
+         `La percentuale dipende dal contratto e dalla dimensione aziendale.`,
+      f: "Tabelle aliquote INPS 2026 + Circolare INPS n. 6/2026"
     },
-
     imponibile: {
       t: "Lordo post contributi (imponibile)",
-      b:
-        `I contributi obbligatori sono deducibili:<br>` +
-        `<code>${euro(r.ral)} − ${euro(r.contributiInps)} = ${euro(r.imponibileFiscale)}</code>`,
+      b: `I contributi obbligatori sono deducibili:<br>` +
+         `<code>${euro(r.ral)} - ${euro(r.contributiInps)} = ${euro(r.imponibileFiscale)}</code>`,
       f: "Art. 10 TUIR"
     },
-
     irpefLorda: {
       t: "IRPEF lorda",
-      b:
-        `Calcolo progressivo per scaglioni:<br>${righeIrpef}` +
-        `<br><br><b>Totale = ${euro(r.irpefLorda)}</b>`,
-      f: "Art. 10 TUIR per l'imponibile; art. 11 TUIR per aliquote e scaglioni"
+      b: `Calcolo progressivo per scaglioni:<br>${irpefRighe}<br><br><b>Totale = ${euro(r.irpefLorda)}</b>`,
+      f: "Art. 11 TUIR"
     },
-
     detrLav: {
       t: "Detrazione lavoro dipendente",
-      b:
-        `La detrazione decresce all'aumentare del reddito. ` +
-        `Nel caso calcolato vale <b>${euro(r.detrLavoro)}</b>` +
-        (r.detrLavoroBonus65
-          ? `, incluso l'incremento di ${euro(r.detrLavoroBonus65)}.`
-          : "."),
+      b: `La detrazione decresce all'aumentare del reddito. Nel caso calcolato vale <b>${euro(r.detrLavoro)}</b>` +
+         (r.detrLavoroBonus65 ? `, incluso il correttivo di ${euro(r.detrLavoroBonus65)}.` : "."),
       f: "Art. 13 TUIR"
     },
-
     ultDetr: {
       t: "Ulteriore detrazione (cuneo fiscale)",
       b: r.ulterioreDetr > 0
         ? (r.imponibileFiscale <= 32000
-          ? `Reddito entro 32.000 €: detrazione piena di <b>${euro(r.ulterioreDetr)}</b>.`
-          : `<code>1.000 × (40.000 − ${num(r.imponibileFiscale)}) / 8.000 = ${euro(r.ulterioreDetr)}</code>`)
-        : `Il reddito non rientra nella fascia prevista.`,
-      f: "Art. 1, comma 6, Legge 207/2024"
+          ? `Reddito entro 32.000 EUR: detrazione piena di <b>${euro(r.ulterioreDetr)}</b>.`
+          : `<code>1.000 x (40.000 - ${num(r.imponibileFiscale)}) / 8.000 = ${euro(r.ulterioreDetr)}</code>`)
+        : "Il reddito non rientra nella fascia 20.000-40.000 EUR.",
+      f: "Art. 1 c.6 L. 207/2024"
     },
-
     irpefNetta: {
       t: "IRPEF netta",
+      b: `<code>${euro(r.irpefLorda)} - ${euro(r.detrLavoro)} - ${euro(r.ulterioreDetr)} = ${euro(r.irpefNetta)}</code>`,
+      f: "IRPEF lorda al netto delle detrazioni"
       b:
         `L'IRPEF netta parte dall'imposta lorda calcolata sul reddito imponibile ` +
         `e sottrae le detrazioni spettanti:<br>` +
-        `<code>${euro(r.irpefLorda)} − ${euro(r.detrLavoro)} − ` +
-        `${euro(r.ulterioreDetr)} = ${euro(r.irpefNetta)}</code>`,
+        `<code>${euro(r.irpefLorda)} - ${euro(r.detrLavoro)} - ` +
+        `${euro(r.ulterioreDetr)} = ${euro(r.irpefNetta)}</code><br><br>` +
+        `Il reddito imponibile utilizzato a monte è determinato tenendo conto ` +
+        `degli oneri deducibili previsti dall'art. 10 TUIR.`,
       f:
-        "Art. 10 TUIR per l'imponibile; art. 11 TUIR per l'imposta lorda; " +
-        "art. 13 TUIR per la detrazione da lavoro; Legge 207/2024 per il cuneo fiscale"
+        "Art. 10 TUIR per la determinazione del reddito imponibile; " +
+        "art. 11 TUIR per l'IRPEF lorda; " +
+        "art. 13 TUIR per la detrazione da lavoro dipendente; " +
+        "art. 1, commi 4-9, L. 207/2024 per il cuneo fiscale"
     },
-
     addReg: {
       t: "Addizionale regionale",
-      b: spiegazioneRegionale,
+      b: regionaleSpiegazione,
       f: r.fonteRegione
         ? `Dipartimento delle Finanze: ${r.fonteRegione}`
         : "Dipartimento delle Finanze - Addizionale regionale IRPEF"
     },
-
     addCom: {
       t: "Addizionale comunale",
-      b:
-        `Il prototipo usa l'aliquota comunale inserita manualmente:<br>` +
-        `<code>${euro(r.imponibileFiscale)} × ${num(r.aliquotaComunale)}% = ${euro(r.addCom)}</code>`,
-      f: "Art. 1 D.Lgs. 360/1998 e delibera del Comune"
+      b: `L'aliquota comunale resta un input manuale ed e applicata all'intero imponibile:<br>` +
+         `<code>${euro(r.imponibileFiscale)} x ${num(r.aliquotaComunale)}% = ${euro(r.addCom)}</code>`,
+      f: "D.Lgs. 360/1998 + delibera del Comune"
     },
-
     totTasse: {
       t: "Totale tasse",
-      b:
-        `<code>${euro(r.irpefNetta)} + ${euro(r.addReg)} + ` +
-        `${euro(r.addCom)} = ${euro(r.totaleTasse)}</code>`,
-      f: "IRPEF netta + addizionale regionale + addizionale comunale"
+      b: `<code>${euro(r.irpefNetta)} + ${euro(r.addReg)} + ${euro(r.addCom)} = ${euro(r.totaleTasse)}</code>`,
+      f: "IRPEF netta + addizionali"
     },
-
+    netto: {
+      t: "Netto in busta",
+      b: `<code>${euro(r.ral)} - ${euro(r.contributiInps)} - ${euro(r.irpefNetta)} - ` +
+         `${euro(r.addReg)} - ${euro(r.addCom)}` +
+         (r.creditiEsenti ? ` + ${euro(r.creditiEsenti)}` : "") +
+         ` = ${euro(r.nettoAnnuo)}</code>`,
+      f: "Formula del netto annuo"
+    },
     crediti: {
       t: "Crediti esenti",
-      b:
-        `Somma integrativa ${euro(r.sommaIntegrativa)} + trattamento integrativo ` +
-        `${euro(r.trattIntegrativo)} = <b>${euro(r.creditiEsenti)}</b>.`,
-      f: "Legge 207/2024 e D.L. 3/2020"
+      b: `Somma integrativa ${euro(r.sommaIntegrativa)} + trattamento integrativo ` +
+         `${euro(r.trattIntegrativo)} = <b>${euro(r.creditiEsenti)}</b>.`,
+      f: "L. 207/2024 + D.L. 3/2020"
     },
-
     sommaInt: {
       t: "Somma integrativa",
-      b:
-        `<code>${euro(r.imponibileFiscale)} × ${num(r.sommaIntegrativaPerc)}% ` +
-        `= ${euro(r.sommaIntegrativa)}</code>`,
-      f: "Art. 1, comma 4, Legge 207/2024"
+      b: `<code>${euro(r.imponibileFiscale)} x ${num(r.sommaIntegrativaPerc)}% = ${euro(r.sommaIntegrativa)}</code>`,
+      f: "Art. 1 c.4 L. 207/2024"
     },
-
     trattInt: {
       t: "Trattamento integrativo",
       b: `Credito calcolato nel caso corrente: <b>${euro(r.trattIntegrativo)}</b>.`,
       f: "Art. 1 D.L. 3/2020"
     },
-
-    netto: {
-      t: "Netto in busta",
-      b:
-        `<code>${euro(r.ral)} − ${euro(r.contributiInps)} − ` +
-        `${euro(r.irpefNetta)} − ${euro(r.addReg)} − ${euro(r.addCom)}` +
-        (r.creditiEsenti ? ` + ${euro(r.creditiEsenti)}` : "") +
-        ` = ${euro(r.nettoAnnuo)}</code>`,
-      f: "Formula annuale del netto"
-    },
-
     aliqEff: {
       t: "Aliquota effettiva",
-      b:
-        `<code>${euro(r.totaleTasse)} / ${euro(r.ral)} ` +
-        `= ${num(r.aliquotaEffettiva)}%</code>`,
+      b: `<code>${euro(r.totaleTasse)} / ${euro(r.ral)} = ${num(r.aliquotaEffettiva)}%</code>`,
       f: "Indicatore di sintesi"
     },
-
     mensOrd: {
-      t: "Media dei 12 mesi ordinari",
-      b:
-        `Il valore riconcilia il netto annuo dopo aver sottratto le mensilità aggiuntive:<br>` +
-        `<code>(${euro(r.nettoAnnuo)} − ${euro(r.nettoMensilitaAggiuntiva)} × ` +
-        `${r.mesiExtra}) / 12 = ${euro(r.nettoOrdinarioMese)}</code><br><br>` +
-        `È una media: i singoli cedolini possono variare per il calendario delle addizionali.`,
+      t: "Mensilita ordinarie",
+      b: `<code>(${euro(r.nettoAnnuo)} - ${euro(r.nettoMensilitaAggiuntiva)} x ${r.mesiExtra}) / 12 = ` +
+         `${euro(r.nettoOrdinarioMese)}</code>`,
+      f: "Ripartizione annuale del netto"
+    },
+    mensExtra: {
+      t: "Mensilita aggiuntive",
+      b: `Le mensilita aggiuntive non beneficiano delle detrazioni. Per distribuire ` +
+         `l'addizionale regionale progressiva si usa l'aliquota regionale effettiva annua ` +
+         `(${num(r.aliquotaRegionaleEffettiva, 4)}%).<br>` +
+         `<code>${euro(r.lordoMese)} - contributi - IRPEF - addizionali = ` +
+         `${euro(r.nettoMensilitaAggiuntiva)}</code>`,
       f: "Ripartizione rappresentativa del netto annuo"
     },
-
-    mensExtra: {
-      t: "Mensilità aggiuntive",
-      b:
-        `Le mensilità aggiuntive non beneficiano delle detrazioni ` +
-        `da lavoro dipendente.<br><br>` +
-        `L'addizionale regionale e l'addizionale comunale non sono ` +
-        `sottratte direttamente dalla tredicesima, dalla quattordicesima ` +
-        `o dall'eventuale quindicesima. Sono calcolate sul reddito annuo ` +
-        `e sono già comprese nel netto annuo complessivo.<br><br>` +
-        `<code>${euro(r.lordoMese)} − ${euro(r.contrMese)} contributi INPS ` +
-        `− ${euro(r.irpefMese)} IRPEF ` +
-        `= ${euro(r.nettoMensilitaAggiuntiva)}</code>`,
-      f:
-        "Art. 50 D.Lgs. 446/1997 per l'addizionale regionale; " +
-        "art. 1 D.Lgs. 360/1998 per l'addizionale comunale"
-    },
-
     buoni: {
       t: "Buoni pasto",
-      b:
-        `<code>${euro(r.benefici.valoreBuono)} × ${r.benefici.giorniBuono} ` +
-        `= ${euro(r.benefici.buoniTotAnnuo)}</code><br>` +
-        `Esente fino a ${euro(r.benefici.buoniEsenteGiorno)} per giorno.`,
-      f: "Art. 51, comma 2, lettera c, TUIR"
+      b: `<code>${euro(r.benefici.valoreBuono)} x ${r.benefici.giorniBuono} = ` +
+         `${euro(r.benefici.buoniTotAnnuo)}</code><br>` +
+         `Esente fino a ${euro(r.benefici.buoniEsenteGiorno)} per giorno.`,
+      f: "Art. 51 c.2 lett. c TUIR"
     },
-
     fringe: {
       t: "Fringe benefit",
       b: r.benefici.fringeImponibile > 0
         ? `Importo oltre la soglia di ${euro(r.benefici.fringeSoglia)}: interamente imponibile.`
         : `Importo entro la soglia di ${euro(r.benefici.fringeSoglia)}: esente.`,
-      f: "Art. 51, comma 3, TUIR"
+      f: "Art. 51 c.3 TUIR"
     },
-
     tfr: {
       t: "TFR accantonato",
-      b:
-        `<code>${euro(r.ral)} / 13,5 − ${euro(r.ral)} × 0,50% ` +
-        `= ${euro(r.tfr)}</code>`,
+      b: `<code>${euro(r.ral)} / 13,5 - ${euro(r.ral)} x 0,50% = ${euro(r.tfr)}</code>`,
       f: "Art. 2120 Codice Civile"
     }
   };
 
-  return audit[chiave] || {
-    t: "Informazione",
-    b: "Spiegazione non disponibile.",
-    f: ""
-  };
+  return audit[chiave] || { t: "Informazione", b: "Spiegazione non disponibile.", f: "" };
 }
 
 function apriAudit(elemento) {
   if (!ULTIMO) return;
-
-  const chiave = elemento.getAttribute("data-audit");
-  const info = generaAudit(chiave, ULTIMO);
-
+  const info = generaAudit(elemento.getAttribute("data-audit"), ULTIMO);
   document.getElementById("auditTitle").textContent = info.t;
   document.getElementById("auditBody").innerHTML = info.b;
-  document.getElementById("auditFonte").textContent = info.f
-    ? `Fonte: ${info.f}`
-    : "";
+  document.getElementById("auditFonte").textContent = info.f ? `Fonte: ${info.f}` : "";
 
-  const popover = document.getElementById("auditPopover");
-  popover.style.display = "block";
+  const pop = document.getElementById("auditPopover");
+  pop.style.display = "block";
 
   const rect = elemento.getBoundingClientRect();
   const larghezza = 320;
-
-  let left =
-    rect.left +
-    window.scrollX -
-    larghezza / 2 +
-    8;
-
-  left = Math.max(
-    10,
-    Math.min(
-      left,
-      window.scrollX + document.documentElement.clientWidth - larghezza - 10
-    )
-  );
-
-  popover.style.left = `${left}px`;
-  popover.style.top = `${rect.bottom + window.scrollY + 8}px`;
+  let left = rect.left + window.scrollX - larghezza / 2 + 8;
+  left = Math.max(10, Math.min(
+    left,
+    window.scrollX + document.documentElement.clientWidth - larghezza - 10
+  ));
+  pop.style.left = `${left}px`;
+  pop.style.top = `${rect.bottom + window.scrollY + 8}px`;
 }
 
 function chiudiAudit() {
-  const popover = document.getElementById("auditPopover");
-  if (popover) {
-    popover.style.display = "none";
-  }
+  const pop = document.getElementById("auditPopover");
+  if (pop) pop.style.display = "none";
 }
 
 function mostraRisultati(r) {
   document.getElementById("risultati").style.display = "block";
-
   document.getElementById("outNettoAnnuo").textContent = euro(r.nettoAnnuo);
   document.getElementById("outPercNetto").textContent = `(${r.percNetto}% della RAL)`;
   document.getElementById("outNettoOrd").textContent = euro(r.nettoOrdinarioMese);
 
-  const rowExtra = document.getElementById("rowExtra");
-
   if (r.mesiExtra > 0) {
-    rowExtra.style.display = "flex";
-    document.getElementById("badgeExtra").textContent = `${r.mesiExtra}×`;
-
+    document.getElementById("rowExtra").style.display = "flex";
+    document.getElementById("badgeExtra").textContent = `${r.mesiExtra}x`;
     const nomi = {
-      1: "13ª mensilità",
-      2: "13ª e 14ª mensilità",
-      3: "13ª, 14ª e 15ª mensilità"
+      1: "13a mensilita",
+      2: "13a e 14a mensilita",
+      3: "13a, 14a e 15a mensilita"
     };
-
     document.getElementById("descExtra").innerHTML =
-      `${nomi[r.mesiExtra]} ` +
-      `<i class="info" data-audit="mensExtra">&#9432;</i>` +
-      `<br><small>` +
-      `senza detrazioni da lavoro; addizionali incluse nel totale annuo` +
-      `</small>`;
-
+      `${nomi[r.mesiExtra]} <i class="info" data-audit="mensExtra">&#9432;</i>` +
+      `<br><small>senza detrazioni: netto piu basso</small>`;
     document.getElementById("outNettoExtra").textContent =
       `${euro(r.nettoMensilitaAggiuntiva)} cad.`;
   } else {
-    rowExtra.style.display = "none";
+    document.getElementById("rowExtra").style.display = "none";
   }
 
   document.getElementById("outRal").textContent = euro(r.ral);
@@ -469,10 +356,10 @@ function mostraRisultati(r) {
   document.getElementById("outImponibile").textContent = euro(r.imponibileFiscale);
   document.getElementById("outIrpefLorda").textContent = euro(r.irpefLorda);
   document.getElementById("outDetrLav").textContent = euro(r.detrLavoro);
+  document.getElementById("liUlt").style.display = r.ulterioreDetr > 0 ? "flex" : "none";
   document.getElementById("outUltDetr").textContent = euro(r.ulterioreDetr);
   document.getElementById("outTotTasse").textContent = euro(r.totaleTasse);
   document.getElementById("outAliqEff").textContent = `${r.aliquotaEffettiva} %`;
-  document.getElementById("liUlt").style.display = r.ulterioreDetr > 0 ? "flex" : "none";
 
   if (r.sommaIntegrativa > 0) {
     document.getElementById("boxSomma").style.display = "flex";
@@ -489,7 +376,6 @@ function mostraRisultati(r) {
   }
 
   mostraBenefici(r.benefici);
-
   document.getElementById("outTfr").textContent = euro(r.tfr);
   disegnaGrafico(r);
 }
@@ -497,28 +383,23 @@ function mostraRisultati(r) {
 function mostraBenefici(b) {
   const haBuoni = b.buoniTotAnnuo > 0;
   const haFringe = b.fringeEsente > 0 || b.fringeImponibile > 0;
-  const panel = document.getElementById("beneficiPanel");
 
   if (!haBuoni && !haFringe) {
-    panel.style.display = "none";
+    document.getElementById("beneficiPanel").style.display = "none";
     return;
   }
 
-  panel.style.display = "block";
+  document.getElementById("beneficiPanel").style.display = "block";
 
   if (haBuoni) {
     document.getElementById("benBuoni").style.display = "flex";
     document.getElementById("benBuoniSub").style.display = "block";
     document.getElementById("outBuoni").textContent = `${euro(b.buoniMensile)}/mese`;
-
-    let testo =
-      `${euro(b.valoreBuono)}/giorno · esente fino ${euro(b.buoniEsenteGiorno)} ` +
-      `· totale anno ${euro(b.buoniTotAnnuo)}`;
-
+    let testo = `${euro(b.valoreBuono)}/giorno - esente fino ${euro(b.buoniEsenteGiorno)} - ` +
+      `totale anno ${euro(b.buoniTotAnnuo)}`;
     if (b.buoniImponibileAnnuo > 0) {
-      testo += ` · di cui tassato ${euro(b.buoniImponibileAnnuo)}`;
+      testo += ` - di cui tassato ${euro(b.buoniImponibileAnnuo)}`;
     }
-
     document.getElementById("benBuoniSub").textContent = testo;
   } else {
     document.getElementById("benBuoni").style.display = "none";
@@ -530,11 +411,9 @@ function mostraBenefici(b) {
     document.getElementById("benFringeSub").style.display = "block";
     document.getElementById("outFringe").textContent =
       `${euro(b.fringeEsente + b.fringeImponibile)}/anno`;
-
-    document.getElementById("benFringeSub").textContent =
-      b.fringeImponibile > 0
-        ? `Supera la soglia di ${euro(b.fringeSoglia)}: intero importo tassato`
-        : `Entro la soglia di ${euro(b.fringeSoglia)}: esente`;
+    document.getElementById("benFringeSub").textContent = b.fringeImponibile > 0
+      ? `Supera la soglia di ${euro(b.fringeSoglia)}: intero importo tassato`
+      : `Entro la soglia di ${euro(b.fringeSoglia)}: esente`;
   } else {
     document.getElementById("benFringe").style.display = "none";
     document.getElementById("benFringeSub").style.display = "none";
@@ -545,30 +424,11 @@ function mostraBenefici(b) {
 
 function disegnaGrafico(r) {
   const ctx = document.getElementById("graficoTorta");
-
   const data = {
-    labels: [
-      "Netto in busta",
-      "Contributi INPS",
-      "IRPEF netta",
-      "Add. regionale",
-      "Add. comunale"
-    ],
+    labels: ["Netto in busta", "Contributi INPS", "IRPEF netta", "Add. regionale", "Add. comunale"],
     datasets: [{
-      data: [
-        r.nettoInBusta,
-        r.contributiInps,
-        r.irpefNetta,
-        r.addReg,
-        r.addCom
-      ],
-      backgroundColor: [
-        "#2e9e5b",
-        "#e8913a",
-        "#d94f4f",
-        "#7b5cc4",
-        "#4aa3c7"
-      ],
+      data: [r.nettoInBusta, r.contributiInps, r.irpefNetta, r.addReg, r.addCom],
+      backgroundColor: ["#2e9e5b", "#e8913a", "#d94f4f", "#7b5cc4", "#4aa3c7"],
       borderWidth: 2,
       borderColor: "#fff"
     }]
@@ -577,32 +437,17 @@ function disegnaGrafico(r) {
   const options = {
     responsive: true,
     plugins: {
-      legend: {
-        position: "bottom",
-        labels: {
-          font: { size: 11 },
-          padding: 10
-        }
-      },
+      legend: { position: "bottom", labels: { font: { size: 11 }, padding: 10 } },
       tooltip: {
         callbacks: {
-          label: contesto =>
-            `${contesto.label}: ${euro(contesto.raw)} ` +
-            `(${(contesto.raw / r.ral * 100).toFixed(1)}%)`
+          label: c => `${c.label}: ${euro(c.raw)} (${(c.raw / r.ral * 100).toFixed(1)}%)`
         }
       }
     }
   };
 
-  if (grafico) {
-    grafico.destroy();
-  }
-
-  grafico = new Chart(ctx, {
-    type: "doughnut",
-    data,
-    options
-  });
+  if (grafico) grafico.destroy();
+  grafico = new Chart(ctx, { type: "doughnut", data, options });
 }
 
 inizializza();
