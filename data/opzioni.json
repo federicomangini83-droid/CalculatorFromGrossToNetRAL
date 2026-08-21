@@ -18,7 +18,8 @@
   "mensilita": [
     { "id": 12, "label": "12 mensilita" },
     { "id": 13, "label": "13 mensilita" },
-    { "id": 14, "label": "14 mensilita" }
+    { "id": 14, "label": "14 mensilita" },
+    { "id": 15, "label": "15 mensilita" }
   ],
 
   "regioni": [
