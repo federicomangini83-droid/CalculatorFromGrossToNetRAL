@@ -45,8 +45,8 @@
       "scaglioni": [
         { "da": 0, "a": 15000, "aliquota": 1.42 },
         { "da": 15000, "a": 28000, "aliquota": 1.43 },
-        { "da": 28000, "a": 50000, "aliquota": 3.32 },
-        { "da": 50000, "a": null, "aliquota": 3.33 }
+        { "da": 28000, "a": 50000, "aliquota": 1.44 },
+        { "da": 50000, "a": null, "aliquota": 1.73 }
       ],
       "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=17"
     },
