@@ -5,7 +5,6 @@
   },
 
   "contributi_inps": {
-    "_nota": "Quota a carico del lavoratore. FPLD settore privato.",
     "aliquota_standard": 9.19,
     "aliquota_over15_dipendenti": 9.49,
     "aliquota_apprendista": 5.84,
@@ -16,13 +15,12 @@
   },
 
   "irpef_scaglioni": {
-    "_nota": "Art. 11 TUIR, mod. L. 199/2025. 2 scaglione 35% -> 33%.",
     "scaglioni": [
       { "da": 0,     "a": 28000, "aliquota": 23 },
       { "da": 28000, "a": 50000, "aliquota": 33 },
       { "da": 50000, "a": null,  "aliquota": 43 }
     ],
-    "fonte": "Art. 11 TUIR (DPR 917/1986) - vigente dal 1/1/2026"
+    "fonte": "Art. 11 TUIR (DPR 917/1986) - vigente dal 1/1/2026 (L. 199/2025)"
   },
 
   "detrazioni_lavoro_dipendente": {
@@ -36,39 +34,34 @@
         "formula": "1910 * (50000 - R) / 22000" },
       { "da": 50000, "a": null,  "tipo": "fisso",   "importo": 0 }
     ],
-    "bonus_ulteriore": {
-      "_nota": "comma 1.1: +65 EUR se reddito tra 25.001 e 35.000",
-      "importo": 65, "da": 25000, "a": 35000
-    },
+    "bonus_ulteriore": { "importo": 65, "da": 25000, "a": 35000 },
     "fonte": "Art. 13 c.1 TUIR, mod. L. 207/2024"
   },
 
-  "detrazioni_familiari": {
-    "_nota": "Art. 12 TUIR. Decrescenti sul reddito complessivo del contribuente.",
-    "figli": {
-      "_nota": "Solo 21-29 anni. Under 21 -> Assegno Unico. Formula per figlio.",
-      "teorico": 950,
-      "teorico_disabile": 1350,
-      "soglia_base": 95000,
-      "incremento_soglia_per_figlio_extra": 15000,
-      "fonte": "Art. 12 c.1 lett. c TUIR"
+  "cuneo_fiscale": {
+    "_nota": "L. 207/2024 art.1 c.4-9. Soglie sul REDDITO COMPLESSIVO (RAL - contributi).",
+    "somma_integrativa": {
+      "_nota": "Esente, si SOMMA al netto. Redditi fino a 20.000.",
+      "soglia_max": 20000,
+      "scaglioni": [
+        { "fino_a": 8500,  "percentuale": 7.1 },
+        { "fino_a": 15000, "percentuale": 5.3 },
+        { "fino_a": 20000, "percentuale": 4.8 }
+      ],
+      "fonte": "Art. 1 c.4 L. 207/2024"
     },
-    "coniuge": {
-      "_nota": "Formula a scaglioni art. 12 c.1 lett. a. Azzeramento oltre 80.000.",
-      "fonte": "Art. 12 c.1 lett. a TUIR"
-    },
-    "altri_familiari": {
-      "_nota": "Solo ascendenti conviventi dal 2025 (L. 207/2024).",
-      "teorico": 750,
-      "soglia": 80000,
-      "fonte": "Art. 12 c.1 lett. d TUIR"
-    },
-    "limite_reddito_a_carico": 2840.51,
-    "limite_reddito_a_carico_figli_under24": 4000
+    "ulteriore_detrazione": {
+      "_nota": "Riduce l'IRPEF. Redditi 20.000-40.000.",
+      "soglia_min": 20000,
+      "soglia_piena": 32000,
+      "soglia_max": 40000,
+      "importo_pieno": 1000,
+      "fonte": "Art. 1 c.6 L. 207/2024"
+    }
   },
 
   "trattamento_integrativo": {
-    "_nota": "Ex bonus Renzi/100 EUR. Credito: si SOMMA al netto, non riduce imponibile.",
+    "_nota": "Ex bonus Renzi/100. Credito: si SOMMA al netto. Redditi <= 15.000 (o 15-28k con capienza detrazioni).",
     "importo_max": 1200,
     "soglia_pieno": 15000,
     "soglia_max": 28000,
@@ -77,7 +70,7 @@
 
   "benefici_esenti": {
     "fringe_benefit": {
-      "_nota": "Art. 51 c.3 TUIR. Regola tutto-o-niente: se supera, TUTTO tassato.",
+      "_nota": "Art. 51 c.3 TUIR. Regola tutto-o-niente.",
       "soglia_senza_figli": 1000,
       "soglia_con_figli": 2000,
       "fonte": "Art. 51 c.3 TUIR (L. 207/2024, triennio 2025-2027)"
@@ -95,12 +88,10 @@
     "aliquota_base": 1.23,
     "fonte": "Art. 50 D.Lgs. 446/1997 + Portale federalismo fiscale"
   },
-
   "addizionale_comunale": {
     "aliquota_default": 0.0,
     "fonte": "D.Lgs. 360/1998 + delibera comunale"
   },
-
   "tfr": {
     "_nota": "Accantonamento FIGURATIVO, non in busta paga mensile.",
     "divisore": 13.5,
