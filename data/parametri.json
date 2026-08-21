@@ -1,101 +1,42 @@
 {
-  "_meta": {
-    "anno_imposta": 2026,
-    "descrizione": "Parametri fissi per il calcolo netto da RAL - anno d'imposta 2026"
-  },
-
+  "_meta": { "anno_imposta": 2026, "descrizione": "Parametri fissi per il calcolo netto da RAL - 2026" },
   "contributi_inps": {
-    "aliquota_standard": 9.19,
-    "aliquota_over15_dipendenti": 9.49,
-    "aliquota_apprendista": 5.84,
-    "aliquota_aggiuntiva_1pct": 1.0,
-    "soglia_aliquota_aggiuntiva": 56224,
-    "massimale_contributivo": 122295,
+    "aliquota_standard": 9.19, "aliquota_over15_dipendenti": 9.49, "aliquota_apprendista": 5.84,
+    "aliquota_aggiuntiva_1pct": 1.0, "soglia_aliquota_aggiuntiva": 56224, "massimale_contributivo": 122295,
     "fonte": "Tabelle aliquote INPS 2026 (OpenData) + Circolare INPS n. 6/2026"
   },
-
   "irpef_scaglioni": {
     "scaglioni": [
-      { "da": 0,     "a": 28000, "aliquota": 23 },
+      { "da": 0, "a": 28000, "aliquota": 23 },
       { "da": 28000, "a": 50000, "aliquota": 33 },
-      { "da": 50000, "a": null,  "aliquota": 43 }
+      { "da": 50000, "a": null, "aliquota": 43 }
     ],
-    "fonte": "Art. 11 TUIR (DPR 917/1986) - vigente dal 1/1/2026 (L. 199/2025)"
+    "fonte": "Art. 11 TUIR, vigente dal 1/1/2026 (L. 199/2025)"
   },
-
   "detrazioni_lavoro_dipendente": {
-    "_nota": "Art. 13 c.1 TUIR. R = reddito complessivo. Rapportata ai giorni.",
     "fasce": [
-      { "da": 0,     "a": 15000, "tipo": "fisso",   "importo": 1955,
-        "minimo_garantito": 690, "minimo_tempo_determinato": 1380 },
-      { "da": 15000, "a": 28000, "tipo": "formula",
-        "formula": "1910 + 1190 * (28000 - R) / 13000" },
-      { "da": 28000, "a": 50000, "tipo": "formula",
-        "formula": "1910 * (50000 - R) / 22000" },
-      { "da": 50000, "a": null,  "tipo": "fisso",   "importo": 0 }
+      { "da": 0, "a": 15000, "tipo": "fisso", "importo": 1955, "minimo_garantito": 690, "minimo_tempo_determinato": 1380 },
+      { "da": 15000, "a": 28000, "tipo": "formula", "formula": "1910 + 1190 * (28000 - R) / 13000" },
+      { "da": 28000, "a": 50000, "tipo": "formula", "formula": "1910 * (50000 - R) / 22000" },
+      { "da": 50000, "a": null, "tipo": "fisso", "importo": 0 }
     ],
     "bonus_ulteriore": { "importo": 65, "da": 25000, "a": 35000 },
     "fonte": "Art. 13 c.1 TUIR, mod. L. 207/2024"
   },
-
   "cuneo_fiscale": {
-    "_nota": "L. 207/2024 art.1 c.4-9. Soglie sul REDDITO COMPLESSIVO (RAL - contributi).",
     "somma_integrativa": {
-      "_nota": "Esente, si SOMMA al netto. Redditi fino a 20.000.",
       "soglia_max": 20000,
-      "scaglioni": [
-        { "fino_a": 8500,  "percentuale": 7.1 },
-        { "fino_a": 15000, "percentuale": 5.3 },
-        { "fino_a": 20000, "percentuale": 4.8 }
-      ],
+      "scaglioni": [ { "fino_a": 8500, "percentuale": 7.1 }, { "fino_a": 15000, "percentuale": 5.3 }, { "fino_a": 20000, "percentuale": 4.8 } ],
       "fonte": "Art. 1 c.4 L. 207/2024"
     },
-    "ulteriore_detrazione": {
-      "_nota": "Riduce l'IRPEF. Redditi 20.000-40.000.",
-      "soglia_min": 20000,
-      "soglia_piena": 32000,
-      "soglia_max": 40000,
-      "importo_pieno": 1000,
-      "fonte": "Art. 1 c.6 L. 207/2024"
-    }
+    "ulteriore_detrazione": { "soglia_min": 20000, "soglia_piena": 32000, "soglia_max": 40000, "importo_pieno": 1000, "fonte": "Art. 1 c.6 L. 207/2024" }
   },
-
-  "trattamento_integrativo": {
-    "_nota": "Ex bonus Renzi/100. Credito: si SOMMA al netto. Redditi <= 15.000 (o 15-28k con capienza detrazioni).",
-    "importo_max": 1200,
-    "soglia_pieno": 15000,
-    "soglia_max": 28000,
-    "fonte": "Art. 1 D.L. 3/2020 conv. L. 21/2020"
-  },
-
+  "trattamento_integrativo": { "importo_max": 1200, "soglia_pieno": 15000, "soglia_max": 28000, "fonte": "Art. 1 D.L. 3/2020 conv. L. 21/2020" },
   "benefici_esenti": {
-    "fringe_benefit": {
-      "_nota": "Art. 51 c.3 TUIR. Regola tutto-o-niente.",
-      "soglia_senza_figli": 1000,
-      "soglia_con_figli": 2000,
-      "fonte": "Art. 51 c.3 TUIR (L. 207/2024, triennio 2025-2027)"
-    },
-    "buoni_pasto": {
-      "_nota": "Art. 51 c.2 lett. c TUIR. Esenzione giornaliera.",
-      "esente_elettronico": 10.0,
-      "esente_cartaceo": 4.0,
-      "giorni_lavoro_default": 220,
-      "fonte": "Art. 51 c.2 lett. c TUIR (L. 199/2025 art.1 c.14)"
-    }
+    "fringe_benefit": { "soglia_senza_figli": 1000, "soglia_con_figli": 2000, "fonte": "Art. 51 c.3 TUIR (L. 207/2024)" },
+    "buoni_pasto": { "esente_elettronico": 10.0, "esente_cartaceo": 4.0, "giorni_lavoro_default": 220, "fonte": "Art. 51 c.2 lett. c TUIR (L. 199/2025 art.1 c.14)" }
   },
-
-  "addizionale_regionale": {
-    "aliquota_base": 1.23,
-    "fonte": "Art. 50 D.Lgs. 446/1997 + Portale federalismo fiscale"
-  },
-  "addizionale_comunale": {
-    "aliquota_default": 0.0,
-    "fonte": "D.Lgs. 360/1998 + delibera comunale"
-  },
-  "tfr": {
-    "_nota": "Accantonamento FIGURATIVO, non in busta paga mensile.",
-    "divisore": 13.5,
-    "contributo_fondo_garanzia": 0.50,
-    "fonte": "Art. 2120 Codice Civile"
-  }
+  "addizionale_regionale": { "aliquota_base": 1.23, "fonte": "Art. 50 D.Lgs. 446/1997" },
+  "addizionale_comunale": { "aliquota_default": 0.0, "fonte": "D.Lgs. 360/1998" },
+  "tfr": { "divisore": 13.5, "contributo_fondo_garanzia": 0.50, "fonte": "Art. 2120 Codice Civile" }
 }
