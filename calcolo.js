@@ -333,13 +333,12 @@ function calcolaNetto(input, p) {
   const imponMese = lordoMese - contrMese;
   const irpefMese = imponMese * aliquotaIrpefMarginale / 100;
 
-  /* Per la sola ripartizione mensile, l'addizionale regionale annua e ripartita
-     usando la sua aliquota effettiva; il totale annuo resta quello a scaglioni. */
-  const addMese = imponMese *
-    (aliquotaRegionaleEffettiva + input.aliquotaComunale) / 100;
-
+  /* Le mensilita aggiuntive (13a/14a/15a) non subiscono la trattenuta delle
+     addizionali regionale e comunale: vengono interamente assorbite dalle
+     mensilita ordinarie, che infatti si riducono di conseguenza mantenendo
+     invariato il netto annuo complessivo. */
   const nettoMensilitaAggiuntiva = arrotonda(
-    lordoMese - contrMese - irpefMese - addMese
+    lordoMese - contrMese - irpefMese
   );
 
   const nettoOrdinarioMese = arrotonda(
