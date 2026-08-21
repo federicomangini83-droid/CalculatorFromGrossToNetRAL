@@ -187,8 +187,6 @@ function generaAudit(chiave, r) {
     },
     irpefNetta: {
       t: "IRPEF netta",
-      b: `<code>${euro(r.irpefLorda)} - ${euro(r.detrLavoro)} - ${euro(r.ulterioreDetr)} = ${euro(r.irpefNetta)}</code>`,
-      f: "IRPEF lorda al netto delle detrazioni"
       b:
         `L'IRPEF netta parte dall'imposta lorda calcolata sul reddito imponibile ` +
         `e sottrae le detrazioni spettanti:<br>` +
