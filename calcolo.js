@@ -170,7 +170,6 @@ function calcolaBenefici(input, p) {
  * Comune: resta volutamente un'aliquota unica inserita dall'utente.
  */
 function calcolaAddizionaleRegionale(imponibile, input) {
-  const scaglioni = input.regioneScaglioni;
   const cfg = input.regioneConfig || {};
   const tipo = cfg.tipo_addizionale || input.regioneTipoAddizionale || "aliquota_unica";
   const riduzioni = [];
@@ -179,6 +178,7 @@ function calcolaAddizionaleRegionale(imponibile, input) {
 
   function calcoloProgressivo(scaglioni) {
     let totale = 0;
+
     const righe = [];
     for (const s of scaglioni || []) {
       const sup = s.a === null ? Infinity : s.a;
@@ -268,6 +268,8 @@ function calcolaAddizionaleRegionale(imponibile, input) {
     riduzioni.push({ descrizione: "Detrazione fissa regionale", importo: speciali.detrazione_fissa.importo });
   }
 
+  const aliquota = input.aliquotaRegionale || 0;
+  const imposta = arrotonda(imponibile * aliquota / 100);
   const valore = arrotonda(Math.max(0, impostaLorda - detrazione));
   return {
     valore,
