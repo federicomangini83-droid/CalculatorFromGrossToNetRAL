@@ -170,41 +170,112 @@ function calcolaBenefici(input, p) {
  * Comune: resta volutamente un'aliquota unica inserita dall'utente.
  */
 function calcolaAddizionaleRegionale(imponibile, input) {
-  const scaglioni = input.regioneScaglioni;
+  const cfg = input.regioneConfig || {};
+  const tipo = cfg.tipo_addizionale || input.regioneTipoAddizionale || "aliquota_unica";
+  const riduzioni = [];
+  let dettaglio = [];
+  let impostaLorda = 0;
 
-  if (Array.isArray(scaglioni) && scaglioni.length > 0) {
+  function calcoloProgressivo(scaglioni) {
     let totale = 0;
-    const dettaglio = [];
-
-    for (const s of scaglioni) {
+    const righe = [];
+    for (const s of scaglioni || []) {
       const sup = s.a === null ? Infinity : s.a;
       if (imponibile > s.da) {
         const base = Math.min(imponibile, sup) - s.da;
         const imposta = base * s.aliquota / 100;
         totale += imposta;
-        dettaglio.push({
-          da: s.da,
-          a: s.a,
-          aliquota: s.aliquota,
-          base: arrotonda(base),
-          imposta: arrotonda(imposta)
-        });
+        righe.push({ da: s.da, a: s.a, aliquota: s.aliquota,
+          base: arrotonda(base), imposta: arrotonda(imposta) });
       }
     }
-
-    return {
-      valore: arrotonda(totale),
-      tipo: "scaglioni_progressivi",
-      dettaglio
-    };
+    return { totale, righe };
   }
 
-  const aliquota = input.aliquotaRegionale || 0;
-  const imposta = arrotonda(imponibile * aliquota / 100);
+  function aliquotaFascia(fasce) {
+    return (fasce || []).find(f => imponibile > f.da && (f.a === null || imponibile <= f.a))
+      || (fasce || [])[0];
+  }
+
+  if (tipo === "aliquota_unica") {
+    impostaLorda = imponibile * (cfg.aliquota || input.aliquotaRegionale || 0) / 100;
+    dettaglio = [{ da: 0, a: null, aliquota: cfg.aliquota || input.aliquotaRegionale || 0,
+      base: imponibile, imposta: arrotonda(impostaLorda) }];
+  } else if (tipo === "aliquota_unica_con_esenzione") {
+    if (imponibile <= (cfg.soglia_esenzione || 0)) {
+      riduzioni.push({ descrizione: `Esenzione fino a ${cfg.soglia_esenzione} euro`, importo: 0 });
+      impostaLorda = 0;
+      dettaglio = [];
+    } else {
+      impostaLorda = imponibile * cfg.aliquota / 100;
+      dettaglio = [{ da: 0, a: null, aliquota: cfg.aliquota,
+        base: imponibile, imposta: arrotonda(impostaLorda) }];
+    }
+  } else if (tipo === "aliquota_intero_imponibile_per_fascia") {
+    const fascia = aliquotaFascia(cfg.fasce);
+    const aliquota = fascia ? fascia.aliquota : 0;
+    impostaLorda = imponibile * aliquota / 100;
+    dettaglio = [{ da: 0, a: null, aliquota, base: imponibile,
+      imposta: arrotonda(impostaLorda), nota: "Aliquota della fascia applicata all'intero imponibile" }];
+  } else if (tipo === "regola_speciale_umbria") {
+    const regolaBassa = cfg.regole_speciali && cfg.regole_speciali.aliquota_intero_imponibile_fino_reddito;
+    if (regolaBassa && imponibile <= regolaBassa.fino_reddito) {
+      impostaLorda = imponibile * regolaBassa.aliquota / 100;
+      dettaglio = [{ da: 0, a: null, aliquota: regolaBassa.aliquota,
+        base: imponibile, imposta: arrotonda(impostaLorda), nota: "Maggiorazioni non applicate fino a 28.000 euro" }];
+    } else {
+      const calc = calcoloProgressivo(cfg.scaglioni);
+      impostaLorda = calc.totale;
+      dettaglio = calc.righe;
+    }
+  } else {
+    if (cfg.regole_speciali && cfg.regole_speciali.deduzione_totale_fino_reddito &&
+        imponibile <= cfg.regole_speciali.deduzione_totale_fino_reddito) {
+      riduzioni.push({ descrizione: `Deduzione pari al reddito fino a ${cfg.regole_speciali.deduzione_totale_fino_reddito} euro`, importo: 0 });
+      impostaLorda = 0;
+      dettaglio = [];
+    } else {
+      const calc = calcoloProgressivo(cfg.scaglioni || input.regioneScaglioni);
+      impostaLorda = calc.totale;
+      dettaglio = calc.righe;
+    }
+  }
+
+  const speciali = cfg.regole_speciali || {};
+  let detrazione = 0;
+
+  if (speciali.detrazione_generale && imponibile <= speciali.detrazione_generale.fino_reddito) {
+    detrazione += speciali.detrazione_generale.importo;
+    riduzioni.push({ descrizione: "Detrazione generale", importo: speciali.detrazione_generale.importo });
+  }
+
+  if (speciali.detrazione_oltre_50000 && imponibile > speciali.detrazione_oltre_50000.da_reddito) {
+    const d = Math.min(
+      speciali.detrazione_oltre_50000.importo_massimo,
+      speciali.detrazione_oltre_50000.importo_massimo *
+        (imponibile - speciali.detrazione_oltre_50000.da_reddito) /
+        speciali.detrazione_oltre_50000.divisore
+    );
+    detrazione += Math.max(0, d);
+    riduzioni.push({ descrizione: "Detrazione su redditi oltre 50.000 euro", importo: arrotonda(Math.max(0, d)) });
+  }
+
+  if (speciali.detrazione_fissa &&
+      imponibile > speciali.detrazione_fissa.da_reddito &&
+      imponibile <= speciali.detrazione_fissa.a_reddito) {
+    detrazione += speciali.detrazione_fissa.importo;
+    riduzioni.push({ descrizione: "Detrazione fissa regionale", importo: speciali.detrazione_fissa.importo });
+  }
+
+  const valore = arrotonda(Math.max(0, impostaLorda - detrazione));
   return {
-    valore: imposta,
-    tipo: "aliquota_unica",
-    dettaglio: [{ da: 0, a: null, aliquota, base: imponibile, imposta }]
+    valore,
+    tipo,
+    dettaglio,
+    impostaLorda: arrotonda(impostaLorda),
+    detrazioniRegionali: arrotonda(detrazione),
+    riduzioni,
+    notaSemplificazione: cfg.nota_semplificazione || ""
   };
 }
 
@@ -292,6 +363,10 @@ function calcolaNetto(input, p) {
     addReg,
     addRegDettaglio,
     addRegTipo,
+    addRegImpostaLorda: calcoloAddReg.impostaLorda,
+    addRegDetrazioni: calcoloAddReg.detrazioniRegionali,
+    addRegRiduzioni: calcoloAddReg.riduzioni,
+    addRegNotaSemplificazione: calcoloAddReg.notaSemplificazione,
     addCom,
     totaleTasse,
     sommaIntegrativa,
