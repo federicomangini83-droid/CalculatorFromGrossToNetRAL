@@ -1,7 +1,6 @@
 {
   "_meta": {
-    "descrizione": "Opzioni selezionabili dall'utente nel form di input",
-    "note": "Le aliquote regionali sono indicative e semplificate (aliquota media/base). Da verificare sul Portale del federalismo fiscale per il valore esatto per fascia di reddito."
+    "descrizione": "Opzioni selezionabili nel form. Aliquote regionali indicative."
   },
 
   "tipo_contratto": [
@@ -11,7 +10,7 @@
   ],
 
   "dimensione_azienda": [
-    { "id": "fino15", "label": "Fino a 15 dipendenti", "aliquota_inps_key": "aliquota_standard" },
+    { "id": "fino15",  "label": "Fino a 15 dipendenti", "aliquota_inps_key": "aliquota_standard" },
     { "id": "oltre15", "label": "Oltre 15 dipendenti",  "aliquota_inps_key": "aliquota_over15_dipendenti" }
   ],
 
@@ -22,26 +21,32 @@
     { "id": 15, "label": "15 mensilita" }
   ],
 
+  "tipo_buono_pasto": [
+    { "id": "nessuno",     "label": "Nessuno" },
+    { "id": "elettronico", "label": "Elettronico (esente fino 10 EUR)" },
+    { "id": "cartaceo",    "label": "Cartaceo (esente fino 4 EUR)" }
+  ],
+
   "regioni": [
-    { "id": "abruzzo",        "label": "Abruzzo",                       "aliquota": 1.73 },
-    { "id": "basilicata",     "label": "Basilicata",                    "aliquota": 1.23 },
-    { "id": "calabria",       "label": "Calabria",                      "aliquota": 2.03 },
-    { "id": "campania",       "label": "Campania",                      "aliquota": 2.03 },
-    { "id": "emilia",         "label": "Emilia-Romagna",                "aliquota": 1.33 },
-    { "id": "friuli",         "label": "Friuli-Venezia Giulia",         "aliquota": 1.23 },
-    { "id": "lazio",          "label": "Lazio",                         "aliquota": 3.33 },
-    { "id": "liguria",        "label": "Liguria",                       "aliquota": 1.23 },
-    { "id": "lombardia",      "label": "Lombardia",                     "aliquota": 1.23 },
-    { "id": "marche",         "label": "Marche",                        "aliquota": 1.23 },
-    { "id": "molise",         "label": "Molise",                        "aliquota": 2.03 },
-    { "id": "piemonte",       "label": "Piemonte",                      "aliquota": 1.62 },
-    { "id": "puglia",         "label": "Puglia",                        "aliquota": 1.33 },
-    { "id": "sardegna",       "label": "Sardegna",                      "aliquota": 1.23 },
-    { "id": "sicilia",        "label": "Sicilia",                       "aliquota": 1.23 },
-    { "id": "toscana",        "label": "Toscana",                       "aliquota": 1.42 },
-    { "id": "trentino",       "label": "Trentino-Alto Adige",           "aliquota": 1.23 },
-    { "id": "umbria",         "label": "Umbria",                        "aliquota": 1.23 },
-    { "id": "valledaosta",    "label": "Valle d'Aosta",                 "aliquota": 1.23 },
-    { "id": "veneto",         "label": "Veneto",                        "aliquota": 1.23 }
+    { "id": "abruzzo",     "label": "Abruzzo",               "aliquota": 1.73 },
+    { "id": "basilicata",  "label": "Basilicata",            "aliquota": 1.23 },
+    { "id": "calabria",    "label": "Calabria",              "aliquota": 2.03 },
+    { "id": "campania",    "label": "Campania",              "aliquota": 2.03 },
+    { "id": "emilia",      "label": "Emilia-Romagna",        "aliquota": 1.33 },
+    { "id": "friuli",      "label": "Friuli-Venezia Giulia", "aliquota": 1.23 },
+    { "id": "lazio",       "label": "Lazio",                 "aliquota": 3.33 },
+    { "id": "liguria",     "label": "Liguria",               "aliquota": 1.23 },
+    { "id": "lombardia",   "label": "Lombardia",             "aliquota": 1.23 },
+    { "id": "marche",      "label": "Marche",                "aliquota": 1.23 },
+    { "id": "molise",      "label": "Molise",                "aliquota": 2.03 },
+    { "id": "piemonte",    "label": "Piemonte",              "aliquota": 1.62 },
+    { "id": "puglia",      "label": "Puglia",                "aliquota": 1.33 },
+    { "id": "sardegna",    "label": "Sardegna",              "aliquota": 1.23 },
+    { "id": "sicilia",     "label": "Sicilia",               "aliquota": 1.23 },
+    { "id": "toscana",     "label": "Toscana",               "aliquota": 1.42 },
+    { "id": "trentino",    "label": "Trentino-Alto Adige",   "aliquota": 1.23 },
+    { "id": "umbria",      "label": "Umbria",                "aliquota": 1.23 },
+    { "id": "valledaosta", "label": "Valle d'Aosta",         "aliquota": 1.23 },
+    { "id": "veneto",      "label": "Veneto",                "aliquota": 1.23 }
   ]
 }
