@@ -1,269 +1,246 @@
-# Calcolatore Retribuzione Netta da RAL — Anno d'imposta 2026
+# Calcolatore netto da RAL - 2026
 
-Prototipo che, data la **Retribuzione Annua Lorda (RAL)** di un lavoratore
-dipendente del settore privato, calcola il **netto annuale e mensile** e scompone
-tutte le voci trattenute e aggiunte.
+Applicazione web per stimare il netto annuo e mensile di un lavoratore dipendente partendo dalla RAL.
 
-🔗 **App live:** https://federicomangini83-droid.github.io/CalculatorFromGrossToNetRAL/
+**App:** [Apri il calcolatore](https://federicomangini83-droid.github.io/CalculatorFromGrossToNetRAL/)
 
----
-
-# PARTE 1 — Definizione teorica del calcolo
-
-## 1.1 Variabili di input
-
-| Simbolo | Variabile | Unità |
-|---------|-----------|-------|
-| `RAL` | Retribuzione Annua Lorda | € |
-| `aINPS` | Aliquota contributiva a carico del lavoratore | % |
-| `M` | Numero di mensilità (12/13/14/15) | n. |
-| `G` | Giorni di lavoro nell'anno | giorni (max 365) |
-| `aReg` | Aliquota addizionale regionale | % |
-| `aCom` | Aliquota addizionale comunale | % |
-| `FB` | Fringe benefit / welfare annuo | € |
-| `vBP` | Valore giornaliero buono pasto | € |
-| `gBP` | Giorni con buono pasto nell'anno | giorni |
-
-## 1.2 Parametri fissi (costanti di legge 2026)
-
-| Simbolo | Parametro | Valore 2026 |
-|---------|-----------|-------------|
-| `S₁%` | Soglia 1° scaglione IRPEF (23%) | fino a 28.000 € |
-| `S₂%` | Soglia 2° scaglione IRPEF (33%) | 28.000–50.000 € |
-| `S₃%` | Soglia 3° scaglione IRPEF (43%) | oltre 50.000 € |
-| `soglia1%` | Soglia contributo aggiuntivo INPS +1% | 56.224 € |
-| `MAX` | Massimale contributivo INPS | 122.295 € |
-| `Dmax` | Detrazione lavoro dip. massima | 1.955 € |
-| `UD` | Ulteriore detrazione cuneo (piena) | 1.000 € |
-| `soglia_UD` | Soglie ulteriore detrazione | 20.000 / 32.000 / 40.000 € |
-| `T` | Trattamento integrativo massimo | 1.200 € |
-| `EFB` | Esenzione fringe benefit | 1.000 € (2.000 con figli) |
-| `EBP` | Esenzione buono pasto/giorno | 10 € (elettr.) / 4 € (cart.) |
-| `div_TFR` | Divisore TFR | 13,5 |
-
-## 1.3 Formula estesa (passo per passo)
-
-**(1) Contributi INPS** — con base limitata al massimale e +1% oltre soglia:
-
-```
-base = min(RAL, MAX)
-se base ≤ soglia1%:   CINPS = base × aINPS
-altrimenti:           CINPS = soglia1% × aINPS + (base − soglia1%) × (aINPS + 1%)
-```
-
-**(2) Reddito complessivo** (= base imponibile IRPEF; i contributi sono deducibili):
-
-```
-RC = RAL − CINPS
-```
-
-**(3) IRPEF lorda** — progressiva per scaglioni (ogni aliquota solo sulla parte di RC nello scaglione):
-
-```
-IRPEFl = 23% × min(RC, 28.000)
-       + 33% × max(0, min(RC, 50.000) − 28.000)
-       + 43% × max(0, RC − 50.000)
-```
-
-**(4) Detrazione lavoro dipendente** (art. 13 TUIR), rapportata ai giorni:
-
-```
-             ┌ 1.955                              se RC ≤ 15.000
-D_base(RC) = │ 1.910 + 1.190 × (28.000−RC)/13.000  se 15.000 < RC ≤ 28.000
-             │ 1.910 × (50.000−RC)/22.000          se 28.000 < RC ≤ 50.000
-             └ 0                                   se RC > 50.000
-
-DLav = D_base(RC) × (G / 365)     [+65 € se 25.000 < RC ≤ 35.000]
-```
-
-**(5) Ulteriore detrazione — cuneo fiscale** (riduce l'IRPEF, redditi 20k–40k):
-
-```
-        ┌ 1.000                          se 20.000 < RC ≤ 32.000
-UDetr = │ 1.000 × (40.000−RC)/8.000       se 32.000 < RC ≤ 40.000
-        └ 0                              altrimenti
-```
-
-**(6) IRPEF netta:**
-
-```
-IRPEFn = max(0, IRPEFl − DLav − UDetr)
-```
-
-**(7) Addizionali** (sul reddito complessivo):
-
-```
-AReg = RC × aReg      ACom = RC × aCom
-```
-
-**(8) Somma integrativa — cuneo fiscale** (esente, redditi ≤ 20k, si somma al netto):
-
-```
-        ┌ RC × 7,1%   se RC ≤ 8.500
-SInt =  │ RC × 5,3%   se 8.500 < RC ≤ 15.000
-        │ RC × 4,8%   se 15.000 < RC ≤ 20.000
-        └ 0           se RC > 20.000
-```
-
-**(9) Trattamento integrativo** (ex bonus 100€, si somma al netto):
-
-```
-        ┌ 1.200                      se RC ≤ 15.000 e IRPEFl > DLav
-TInt =  │ min(DLav − IRPEFl, 1.200)   se 15.000 < RC ≤ 28.000 e DLav > IRPEFl
-        └ 0                          se RC > 28.000
-```
-
-### ▶️ FORMULA DEL NETTO ANNUO
-
-```
-NETTO ANNUO = RAL − CINPS − IRPEFn − AReg − ACom + SInt + TInt
-```
-
-**Ripartizione mensile** (detrazioni e crediti gravano solo sui 12 mesi ordinari):
-
-```
-netto_mensilità_aggiuntiva = (RAL/M) − contributi − IRPEF(aliq.marginale) − addizionali
-netto_mese_ordinario = (NETTO ANNUO − netto_mensilità_aggiuntiva × (M−12)) / 12
-```
-
-**Voci calcolate a parte** (non sommate al netto in busta):
-
-```
-buoni pasto esenti = min(vBP, EBP) × gBP
-fringe benefit     = FB se FB ≤ EFB, altrimenti FB è interamente tassato (regola "tutto o niente")
-TFR annuo          = RAL/13,5 − RAL×0,50%   (figurativo, liquidato a fine rapporto)
-```
+L'obiettivo è avere una stima leggibile per confrontare offerte economiche. Non è una replica completa del cedolino: il perimetro e le semplificazioni sono dichiarati qui sotto.
 
 ---
 
-# PARTE 2 — Derivazione di ogni variabile e parametro (con fonte ufficiale)
+## Flusso del calcolo
 
-Ogni valore usato nel calcolo è tracciato alla sua fonte primaria.
-I link sono a **Normattiva**, **Gazzetta Ufficiale**, **INPS**, **MEF** e
-**Agenzia delle Entrate** (fonti ufficiali dello Stato).
+```text
+RAL
+- contributi INPS
+= reddito imponibile
 
-## 2.1 Aliquota contributi INPS `aINPS` = 9,19 % (9,49 % oltre 15 dip.)
-Quota IVS a carico del lavoratore dipendente privato (FPLD). Non esiste un singolo
-articolo che citi "9,19 %": è la somma delle voci assicurative a carico del lavoratore,
-pubblicata dall'INPS. La quota base è **9,19 %**, che sale a **9,49 %** nelle aziende
->15 dipendenti (+0,30 % Fondo Integrazione Salariale); apprendisti **5,84 %**.
-- Pagina istituzionale INPS "Aliquote contributive" (aliquota IVS complessiva 33 %):
-  https://www.inps.it/it/it/inps-comunica/diritti-e-obblighi-in-materia-di-sicurezza-sociale-nell-unione-e/per-le-imprese/aliquote-contributive.html
-- OpenData INPS (tabelle aliquote con la scomposizione 9,19 / 9,49):
-  https://opendata.inps.it/opendata/
+reddito imponibile
+-> IRPEF lorda per scaglioni
+- detrazione da lavoro dipendente
+- ulteriore detrazione sul lavoro dipendente
+= IRPEF netta
 
-## 2.2 Soglia +1 % `soglia1%` = 56.224 € e massimale `MAX` = 122.295 €
-Valori annuali rivalutati ISTAT. Il +1 % aggiuntivo a carico del lavoratore oltre la
-prima fascia deriva dall'art. 3-ter della L. 438/1992; le soglie 2026 sono fissate
-dalla circolare annuale INPS.
-- Circolare INPS n. 6 del 30/01/2026 (punto 5: soglia 56.224 €; punto 6: massimale 122.295 €):
-  https://www.inps.it/it/it/inps-comunica/atti/circolari-messaggi-e-normativa/dettaglio.circolari-e-messaggi.2026.01.circolare-numero-6-del-30-01-2026_15151.html
+reddito imponibile
+-> addizionale regionale
+-> addizionale comunale
 
-## 2.3 Deducibilità dei contributi → `RC = RAL − CINPS`
-I contributi previdenziali obbligatori sono oneri deducibili: si sottraggono dal
-reddito prima di calcolare l'IRPEF.
-- Art. 10 TUIR (DPR 917/1986), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1986-12-22;917
+netto annuo =
+RAL
+- contributi INPS
+- IRPEF netta
+- addizionale regionale
+- addizionale comunale
++ eventuali crediti spettanti
+```
 
-## 2.4 Scaglioni e aliquote IRPEF 23 / 33 / 43 %
-Struttura a tre scaglioni. Il **2° scaglione è sceso dal 35 % al 33 %** con la Legge
-di Bilancio 2026, che ha modificato l'art. 11, c.1, lett. b) del TUIR.
-- Art. 11 TUIR (testo vigente), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1986-12-22;917
-- Art. 11 TUIR (lettura per commi), Brocardi:
-  https://www.brocardi.it/testo-unico-imposte-redditi/titolo-i/capo-i/art11.html
-- Legge 30/12/2025 n. 199 (Bilancio 2026), art. 1 c.3 — "35 % → 33 %", su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2025;199
-- Stesso testo in Gazzetta Ufficiale (GU n. 301 del 30/12/2025):
-  https://www.gazzettaufficiale.it/eli/id/2025/12/30/25G00212/SG
-
-## 2.5 Detrazione lavoro dipendente `DLav` (importi, formule, giorni)
-Importo 1.955 € fino a 15.000 €, decrescente fino a 0 a 50.000 €; minimo 690 €
-(1.380 € per tempo determinato); **rapportata ai giorni** di lavoro nell'anno.
-L'importo massimo è stato portato a 1.955 € dalla Legge di Bilancio 2025.
-- Art. 13 c.1 TUIR (testo con le formule per fascia), Brocardi:
-  https://www.brocardi.it/testo-unico-imposte-redditi/titolo-i/capo-i/art13.html
-- Legge 30/12/2024 n. 207 (Bilancio 2025), art. 1 c.2 lett. b) — "1.880 → 1.955 €", su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2024;207
-
-## 2.6 Cuneo fiscale: somma integrativa `SInt` + ulteriore detrazione `UDetr`
-Dal 2025 il taglio del cuneo è realizzato con due misure fiscali alternative in base
-al reddito: **somma integrativa** esente (7,1 / 5,3 / 4,8 % fino a 20.000 €) e
-**ulteriore detrazione** (1.000 € tra 20.000 e 32.000 €, decrescente fino a 40.000 €).
-È la voce "Ult. detraz. L.Dip." del cedolino.
-- Legge 30/12/2024 n. 207, art. 1 commi 4–9 (testo del cuneo), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2024;207
-- Stesso testo in Gazzetta Ufficiale (GU n. 305 del 31/12/2024):
-  https://www.gazzettaufficiale.it/eli/id/2024/12/31/24G00229/sg
-
-## 2.7 Trattamento integrativo `TInt` (ex bonus 100 €)
-Credito che si somma al netto (non riduce l'imponibile): fino a 1.200 €/anno per
-redditi ≤ 15.000 € con capienza IRPEF, ridotto fino a 28.000 €.
-- D.L. 5/02/2020 n. 3 (istitutivo), conv. L. 2/04/2020 n. 21, su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legge:2020;3
-
-## 2.8 Fringe benefit `EFB` = 1.000 € (2.000 € con figli) — regola "tutto o niente"
-Soglia di esenzione dei beni e servizi ceduti al dipendente; se il valore supera la
-soglia, l'intero importo diventa imponibile. Soglia elevata per il triennio 2025–2027.
-- Art. 51 c.3 TUIR (principio di esenzione), Brocardi:
-  https://www.brocardi.it/testo-unico-imposte-redditi/titolo-i/capo-iv/art51.html
-- Legge 30/12/2024 n. 207 (soglie 1.000 / 2.000 € per 2025–2027), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2024;207
-
-## 2.9 Buoni pasto `EBP` = 10 € (elettronici) / 4 € (cartacei)
-Esenzione giornaliera; l'eccedenza è tassata. La soglia elettronica è salita da 8 a
-10 € con la Legge di Bilancio 2026 (modifica dell'art. 51 c.2 lett. c TUIR).
-- Art. 51 c.2 lett. c) TUIR, Brocardi:
-  https://www.brocardi.it/testo-unico-imposte-redditi/titolo-i/capo-iv/art51.html
-- Legge 30/12/2025 n. 199, art. 1 c.14 ("8 → 10 €" elettronici), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2025;199
-
-## 2.10 Addizionale regionale `aReg`
-Calcolata sul reddito complessivo; aliquota base 1,23 %, maggiorabile dalle Regioni.
-Nel prototipo si usa un'aliquota indicativa per Regione: per il valore esatto per
-fascia si rimanda al Portale del federalismo fiscale.
-- Art. 50 D.Lgs. 15/12/1997 n. 446 (istitutivo), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1997-12-15;446
-- Disciplina del tributo, Dipartimento delle Finanze (MEF):
-  https://www.finanze.gov.it/it/fiscalita/fiscalita-regionale-e-locale/Addizionale-regionale-allIRPEF/disciplina-del-tributo/
-- Aliquote reali per Regione/Comune — Portale del federalismo fiscale (MEF):
-  https://www.finanze.gov.it/
-
-## 2.11 Addizionale comunale `aCom`
-Stabilita dal singolo Comune (0–0,9 %), calcolata sul reddito complessivo.
-- D.Lgs. 28/09/1998 n. 360 (istitutivo), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1998;360
-
-## 2.12 TFR `div_TFR` = 13,5
-Quota annua = retribuzione / 13,5. È un accantonamento figurativo, liquidato a fine
-rapporto: mostrato a parte per non falsare il netto in busta.
-- Art. 2120 Codice Civile (comma 1: "divisa per 13,5"), Brocardi:
-  https://www.brocardi.it/codice-civile/libro-quinto/titolo-ii/capo-i/sezione-iii/art2120.html
-- L. 29/05/1982 n. 297 (che ha riscritto l'art. 2120 c.c.), su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:1982;297
-
-## 2.13 Testo unico di riferimento (TUIR) e PDF ufficiale
-Tutti gli articoli TUIR citati (10, 11, 13, 51) sono nel DPR 917/1986.
-- Testo integrale su Normattiva:
-  https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1986-12-22;917
-- PDF ufficiale del TUIR, Agenzia delle Entrate:
-  https://www.agenziaentrate.gov.it/portale/documents/20143/270670/DPR%2022%20dicembre%201986%20n%20917%20%28Tuir%29_Testo%20unico%20del%2022_12_1986%20n.%20917.pdf/
+Buoni pasto, fringe benefit e TFR sono mostrati separatamente perché non sono una normale mensilità netta.
 
 ---
 
-## Scelte di semplificazione dichiarate
-- **Familiari a carico esclusi** (coniuge, figli, ascendenti): non incidono sul calcolo
-  in questa versione. Scelta voluta per un uso personale di stima.
-- **Aliquote regionali/comunali indicative**: valori base/medi; il dato puntuale per
-  fascia va verificato sul Portale del federalismo fiscale.
-- **Assegno Unico Universale** non incluso: non è reddito e non transita in busta paga
-  (erogato da INPS su base ISEE).
+## Semplificazioni
 
-> ⚠️ Stima indicativa a scopo dimostrativo. Non sostituisce la busta paga reale, che
-> può includere premi, conguagli, voci contrattuali e casi particolari non modellati.
+### Addizionale regionale
 
-## Come eseguirlo in locale
+Le aliquote regionali 2026 sono state inserite per tutte le Regioni e per le Province autonome di Bolzano e Trento usando il database ufficiale del Dipartimento delle Finanze.
+
+Il file `data/opzioni.json` distingue quattro casi:
+
+- `aliquota_unica`: una percentuale sull'intero imponibile;
+- `scaglioni_progressivi`: ogni percentuale si applica solo alla quota di reddito del relativo scaglione;
+- `aliquota_intero_imponibile_per_fascia`: la percentuale della fascia raggiunta si applica all'intero imponibile;
+- `regola_speciale_umbria`: gestione dedicata alle agevolazioni generali pubblicate dal MEF.
+
+Sono gestite anche alcune regole generali non legate alla famiglia, per esempio:
+
+- esenzione della Valle d'Aosta fino a 15.000 euro;
+- deduzione della Provincia autonoma di Trento fino a 30.000 euro;
+- detrazione generale della Provincia autonoma di Bolzano;
+- detrazione di 60 euro del Lazio tra 28.001 e 30.000 euro;
+- detrazione di 150 euro dell'Umbria tra 28.001 e 50.000 euro.
+
+### Agevolazioni regionali non applicate
+
+Non vengono applicate le agevolazioni regionali che richiedono informazioni non presenti nel form, in particolare quelle collegate a:
+
+- figli a carico;
+- numero di figli;
+- figli o familiari con disabilità;
+- percentuale e mesi di carico.
+
+Queste esclusioni sono indicate nel file `opzioni.json` tramite `nota_semplificazione` e sono mostrate anche nell'audit dell'addizionale regionale.
+
+### Addizionale comunale
+
+L'addizionale comunale è un input manuale.
+
+```text
+addizionale comunale = reddito imponibile x aliquota inserita
+```
+
+Il prototipo non importa automaticamente aliquote, scaglioni o soglie di esenzione del singolo Comune. Prima di inserire la percentuale occorre verificarla nel database ufficiale del Dipartimento delle Finanze.
+
+### Altre esclusioni
+
+Non sono gestiti:
+
+- detrazioni per coniuge, figli o altri familiari;
+- premi, straordinari, trasferte e conguagli;
+- fondi pensione e trattenute specifiche;
+- regole contrattuali o personali non presenti nel form.
+
+---
+
+## Addizionali regionali 2026 inserite nel file opzioni
+
+La tabella riassume i valori presenti in `data/opzioni.json`.
+
+| Regione / Provincia autonoma | Modalità | Aliquote inserite | Note del prototipo |
+|---|---|---|---|
+| Abruzzo | Progressiva | 1,67% fino a 28.000; 2,87% fino a 50.000; 3,33% oltre | Nessuna regola familiare applicata |
+| Basilicata | Unica | 1,23% |  |
+| Bolzano | Progressiva | 1,23% fino a 50.000; 1,73% oltre | Gestite le detrazioni generali; esclusa la detrazione per figli |
+| Calabria | Unica | 1,73% |  |
+| Campania | Progressiva | 1,73%; 2,96%; 3,20%; 3,33% | Escluse le detrazioni per figli |
+| Emilia-Romagna | Progressiva | 1,33%; 1,93%; 2,78%; 3,33% |  |
+| Friuli-Venezia Giulia | Aliquota sull'intero imponibile per fascia | 0,70% fino a 15.000; 1,23% oltre | Oltre 15.000 euro, 1,23% sull'intero imponibile |
+| Lazio | Aliquota sull'intero imponibile per fascia | 1,73% fino a 28.000; 3,33% oltre | Gestita la detrazione di 60 euro tra 28.001 e 30.000 |
+| Liguria | Progressiva | 1,23% fino a 28.000; 3,18% fino a 50.000; 3,23% oltre |  |
+| Lombardia | Progressiva | 1,23%; 1,58%; 1,72%; 1,73% |  |
+| Marche | Progressiva | 1,23%; 1,53%; 1,70%; 1,73% | Esclusa l'agevolazione per specifici casi di disabilità |
+| Molise | Progressiva | 2,03%; 2,23%; 3,63%; 3,63% |  |
+| Piemonte | Progressiva | 1,62%; 2,68%; 3,31%; 3,33% | Escluse le detrazioni per figli |
+| Puglia | Progressiva | 1,33%; 2,13%; 3,23%; 3,33% | Escluse le detrazioni per carichi di famiglia |
+| Sardegna | Unica | 1,23% | Escluse le detrazioni per figli |
+| Sicilia | Unica | 1,23% |  |
+| Toscana | Progressiva | 1,42%; 1,43%; 3,32%; 3,33% |  |
+| Trento | Progressiva | 1,23% fino a 50.000; 1,73% oltre | Gestita la deduzione fino a 30.000; esclusa la detrazione per figli |
+| Umbria | Regola speciale | 1,23% sull'intero imponibile fino a 28.000; poi scaglioni 1,73%; 3,02%; 3,12%; 3,33% | Gestita la detrazione di 150 euro tra 28.001 e 50.000 |
+| Valle d'Aosta | Unica con esenzione | Esente fino a 15.000; 1,23% sull'intero imponibile oltre |  |
+| Veneto | Unica | 1,23% | Esclusa l'aliquota agevolata per specifici casi di disabilità |
+
+Le fasce precise sono nel file `data/opzioni.json`.
+
+---
+
+## Come verificare le addizionali regionali sul sito del MEF
+
+Pagina iniziale ufficiale:
+
+[Apri la ricerca delle addizionali regionali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/sceltaregione.htm?cm=)
+
+Procedura:
+
+1. Aprire la pagina.
+2. Selezionare la Regione o Provincia autonoma.
+3. Nella pagina dei risultati selezionare l'anno **2026**.
+4. Controllare le colonne **Aliquota** e **Fascia di applicazione**.
+5. Leggere sempre anche **Disposizioni particolari**, **Norme di riferimento** e **Note**.
+6. Confrontare la pagina con la voce corrispondente in `data/opzioni.json`.
+
+### Link ufficiali diretti per Regione
+
+- [Abruzzo - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=01)
+- [Basilicata - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=02)
+- [Provincia autonoma di Bolzano - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=03)
+- [Calabria - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=04)
+- [Campania - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=05)
+- [Emilia-Romagna - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=06)
+- [Friuli-Venezia Giulia - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=07)
+- [Lazio - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=08)
+- [Liguria - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=09)
+- [Lombardia - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=10)
+- [Marche - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=11)
+- [Molise - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=12)
+- [Piemonte - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=13)
+- [Puglia - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=14)
+- [Sardegna - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=15)
+- [Sicilia - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=16)
+- [Toscana - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=17)
+- [Provincia autonoma di Trento - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=18)
+- [Umbria - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=19)
+- [Valle d'Aosta - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=20)
+- [Veneto - MEF](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=21)
+
+---
+
+## Addizionale comunale
+
+Pagina ufficiale:
+
+[Apri la ricerca delle addizionali comunali](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/sceltaregione.htm)
+
+Procedura:
+
+1. Cercare il Comune o selezionare la Regione.
+2. Selezionare l'anno di interesse.
+3. Controllare aliquota, eventuali scaglioni, soglia di esenzione e note.
+4. Inserire nell'app la percentuale scelta per la simulazione.
+
+**Semplificazione:** l'app non gestisce automaticamente scaglioni o esenzioni comunali.
+
+---
+
+## Altre fonti ufficiali
+
+### TUIR
+
+[DPR 917/1986 su Normattiva](https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1986-12-22;917!vig=2025-01-21)
+
+Articoli usati:
+
+- articolo 10: oneri deducibili;
+- articolo 11: aliquote e scaglioni IRPEF;
+- articolo 13: detrazione da lavoro dipendente;
+- articolo 51: fringe benefit e buoni pasto.
+
+### Aliquota IRPEF del 33% dal 2026
+
+[Legge 30 dicembre 2025, n. 199 su Normattiva](https://www.normattiva.it/eli/id/2025/12/30/25G00212/CONSOLIDATED/)
+
+Aprire l'articolo 1 e cercare il comma 3.
+
+### Cuneo fiscale
+
+[Legge 30 dicembre 2024, n. 207 su Normattiva](https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2024;207)
+
+Aprire l'articolo 1 e leggere i commi da 4 a 9.
+
+### Soglia INPS dell'1% e massimale 2026
+
+[Circolare INPS n. 6 del 30 gennaio 2026](https://www.inps.it/it/it/inps-comunica/atti/circolari-messaggi-e-normativa/dettaglio.circolari-e-messaggi.2026.01.circolare-numero-6-del-30-01-2026_15151.html)
+
+Nel documento consultare:
+
+- punto 5: quota soggetta all'aliquota aggiuntiva dell'1%;
+- punto 6: massimale annuo della base contributiva e pensionabile.
+
+---
+
+## Struttura dei file
+
+```text
+index.html          struttura della pagina
+style.css           layout e popup dell'audit
+app.js              input, output e testi dell'audit
+calcolo.js          formule, regole regionali e calcolo del netto
+data/opzioni.json   opzioni e dati regionali 2026
+data/parametri.json altri parametri fiscali e contributivi
+README.md           perimetro, semplificazioni e fonti
+```
+
+---
+
+## Avvio in locale
+
 ```bash
 python -m http.server 8000
-# poi apri http://localhost:8000
 ```
+
+Poi aprire `http://localhost:8000`.
+
+---
+
+## Limite d'uso
+
+Il risultato è una stima. Prima di prendere una decisione economica va confrontato con un cedolino reale, una simulazione payroll o un professionista abilitato.
