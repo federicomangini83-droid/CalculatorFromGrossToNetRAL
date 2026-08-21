@@ -1,6 +1,8 @@
 {
   "_meta": {
-    "descrizione": "Opzioni del form. Toscana 2026 configurata con scaglioni progressivi ufficiali MEF; le altre Regioni mantengono temporaneamente l'aliquota semplificata gia presente nel prototipo."
+    "anno": 2026,
+    "fonte_generale": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/sceltaregione.htm?cm=",
+    "nota": "Dati ricavati dalle schede regionali 2026 del Dipartimento delle Finanze. Le agevolazioni legate a figli o disabilita non sono applicate dal prototipo."
   },
   "tipo_contratto": [
     { "id": "indeterminato", "label": "Tempo indeterminato", "aliquota_inps_key": "aliquota_standard" },
@@ -23,36 +25,216 @@
     { "id": "cartaceo", "label": "Cartaceo (esente fino 4 EUR)" }
   ],
   "regioni": [
-    { "id": "abruzzo", "label": "Abruzzo", "tipo_addizionale": "aliquota_unica", "aliquota": 1.73 },
-    { "id": "basilicata", "label": "Basilicata", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "calabria", "label": "Calabria", "tipo_addizionale": "aliquota_unica", "aliquota": 2.03 },
-    { "id": "campania", "label": "Campania", "tipo_addizionale": "aliquota_unica", "aliquota": 2.03 },
-    { "id": "emilia", "label": "Emilia-Romagna", "tipo_addizionale": "aliquota_unica", "aliquota": 1.33 },
-    { "id": "friuli", "label": "Friuli-Venezia Giulia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "lazio", "label": "Lazio", "tipo_addizionale": "aliquota_unica", "aliquota": 3.33 },
-    { "id": "liguria", "label": "Liguria", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "lombardia", "label": "Lombardia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "marche", "label": "Marche", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "molise", "label": "Molise", "tipo_addizionale": "aliquota_unica", "aliquota": 2.03 },
-    { "id": "piemonte", "label": "Piemonte", "tipo_addizionale": "aliquota_unica", "aliquota": 1.62 },
-    { "id": "puglia", "label": "Puglia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.33 },
-    { "id": "sardegna", "label": "Sardegna", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "sicilia", "label": "Sicilia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
     {
-      "id": "toscana",
-      "label": "Toscana",
+      "id": "abruzzo", "label": "Abruzzo", "codice_mef": "01",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 28000, "aliquota": 1.67 },
+        { "da": 28000, "a": 50000, "aliquota": 2.87 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
+      ],
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=01"
+    },
+    {
+      "id": "basilicata", "label": "Basilicata", "codice_mef": "02",
+      "tipo_addizionale": "aliquota_unica", "aliquota": 1.23,
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=02"
+    },
+    {
+      "id": "bolzano", "label": "Provincia autonoma di Bolzano", "codice_mef": "03",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 28000, "aliquota": 1.23 },
+        { "da": 28000, "a": 50000, "aliquota": 1.23 },
+        { "da": 50000, "a": null, "aliquota": 1.73 }
+      ],
+      "regole_speciali": {
+        "detrazione_generale": { "fino_reddito": 90000, "importo": 430.50 },
+        "detrazione_oltre_50000": { "da_reddito": 50000, "divisore": 25000, "importo_massimo": 125 }
+      },
+      "nota_semplificazione": "Non applicata la detrazione per figli a carico.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=03"
+    },
+    {
+      "id": "calabria", "label": "Calabria", "codice_mef": "04",
+      "tipo_addizionale": "aliquota_unica", "aliquota": 1.73,
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=04"
+    },
+    {
+      "id": "campania", "label": "Campania", "codice_mef": "05",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.73 },
+        { "da": 15000, "a": 28000, "aliquota": 2.96 },
+        { "da": 28000, "a": 50000, "aliquota": 3.20 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
+      ],
+      "nota_semplificazione": "Non applicate le detrazioni regionali collegate ai figli a carico.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=05"
+    },
+    {
+      "id": "emilia", "label": "Emilia-Romagna", "codice_mef": "06",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.33 },
+        { "da": 15000, "a": 28000, "aliquota": 1.93 },
+        { "da": 28000, "a": 50000, "aliquota": 2.78 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
+      ],
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=06"
+    },
+    {
+      "id": "friuli", "label": "Friuli-Venezia Giulia", "codice_mef": "07",
+      "tipo_addizionale": "aliquota_intero_imponibile_per_fascia",
+      "fasce": [
+        { "da": 0, "a": 15000, "aliquota": 0.70 },
+        { "da": 15000, "a": null, "aliquota": 1.23 }
+      ],
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=07"
+    },
+    {
+      "id": "lazio", "label": "Lazio", "codice_mef": "08",
+      "tipo_addizionale": "aliquota_intero_imponibile_per_fascia",
+      "fasce": [
+        { "da": 0, "a": 28000, "aliquota": 1.73 },
+        { "da": 28000, "a": null, "aliquota": 3.33 }
+      ],
+      "regole_speciali": {
+        "detrazione_fissa": { "da_reddito": 28000, "a_reddito": 30000, "importo": 60 }
+      },
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=08"
+    },
+    {
+      "id": "liguria", "label": "Liguria", "codice_mef": "09",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 28000, "aliquota": 1.23 },
+        { "da": 28000, "a": 50000, "aliquota": 3.18 },
+        { "da": 50000, "a": null, "aliquota": 3.23 }
+      ],
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=09"
+    },
+    {
+      "id": "lombardia", "label": "Lombardia", "codice_mef": "10",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.23 },
+        { "da": 15000, "a": 28000, "aliquota": 1.58 },
+        { "da": 28000, "a": 50000, "aliquota": 1.72 },
+        { "da": 50000, "a": null, "aliquota": 1.73 }
+      ],
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=10"
+    },
+    {
+      "id": "marche", "label": "Marche", "codice_mef": "11",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.23 },
+        { "da": 15000, "a": 28000, "aliquota": 1.53 },
+        { "da": 28000, "a": 50000, "aliquota": 1.70 },
+        { "da": 50000, "a": null, "aliquota": 1.73 }
+      ],
+      "nota_semplificazione": "Non applicata l'aliquota agevolata prevista per specifici casi di figli con disabilita.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=11"
+    },
+    {
+      "id": "molise", "label": "Molise", "codice_mef": "12",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 2.03 },
+        { "da": 15000, "a": 28000, "aliquota": 2.23 },
+        { "da": 28000, "a": 50000, "aliquota": 3.63 },
+        { "da": 50000, "a": null, "aliquota": 3.63 }
+      ],
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=12"
+    },
+    {
+      "id": "piemonte", "label": "Piemonte", "codice_mef": "13",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.62 },
+        { "da": 15000, "a": 28000, "aliquota": 2.68 },
+        { "da": 28000, "a": 50000, "aliquota": 3.31 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
+      ],
+      "nota_semplificazione": "Non applicate le detrazioni regionali collegate ai figli a carico.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=13"
+    },
+    {
+      "id": "puglia", "label": "Puglia", "codice_mef": "14",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.33 },
+        { "da": 15000, "a": 28000, "aliquota": 2.13 },
+        { "da": 28000, "a": 50000, "aliquota": 3.23 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
+      ],
+      "nota_semplificazione": "Non applicate le detrazioni regionali collegate ai carichi di famiglia.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=14"
+    },
+    {
+      "id": "sardegna", "label": "Sardegna", "codice_mef": "15",
+      "tipo_addizionale": "aliquota_unica", "aliquota": 1.23,
+      "nota_semplificazione": "Non applicate le detrazioni regionali collegate ai figli minorenni o con disabilita.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=15"
+    },
+    {
+      "id": "sicilia", "label": "Sicilia", "codice_mef": "16",
+      "tipo_addizionale": "aliquota_unica", "aliquota": 1.23,
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=16"
+    },
+    {
+      "id": "toscana", "label": "Toscana", "codice_mef": "17",
       "tipo_addizionale": "scaglioni_progressivi",
       "scaglioni": [
         { "da": 0, "a": 15000, "aliquota": 1.42 },
         { "da": 15000, "a": 28000, "aliquota": 1.43 },
-        { "da": 28000, "a": 50000, "aliquota": 1.44 },
-        { "da": 50000, "a": null, "aliquota": 1.73 }
+        { "da": 28000, "a": 50000, "aliquota": 3.32 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
       ],
       "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=17"
     },
-    { "id": "trentino", "label": "Trentino-Alto Adige", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "umbria", "label": "Umbria", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "valledaosta", "label": "Valle d'Aosta", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
-    { "id": "veneto", "label": "Veneto", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 }
+    {
+      "id": "trento", "label": "Provincia autonoma di Trento", "codice_mef": "18",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.23 },
+        { "da": 15000, "a": 28000, "aliquota": 1.23 },
+        { "da": 28000, "a": 50000, "aliquota": 1.23 },
+        { "da": 50000, "a": null, "aliquota": 1.73 }
+      ],
+      "regole_speciali": {
+        "deduzione_totale_fino_reddito": 30000
+      },
+      "nota_semplificazione": "Non applicata la detrazione regionale collegata ai figli a carico.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=18"
+    },
+    {
+      "id": "umbria", "label": "Umbria", "codice_mef": "19",
+      "tipo_addizionale": "regola_speciale_umbria",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.73 },
+        { "da": 15000, "a": 28000, "aliquota": 3.02 },
+        { "da": 28000, "a": 50000, "aliquota": 3.12 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
+      ],
+      "regole_speciali": {
+        "aliquota_intero_imponibile_fino_reddito": { "fino_reddito": 28000, "aliquota": 1.23 },
+        "detrazione_fissa": { "da_reddito": 28000, "a_reddito": 50000, "importo": 150 }
+      },
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=19"
+    },
+    {
+      "id": "valledaosta", "label": "Valle d'Aosta", "codice_mef": "20",
+      "tipo_addizionale": "aliquota_unica_con_esenzione", "aliquota": 1.23,
+      "soglia_esenzione": 15000,
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=20"
+    },
+    {
+      "id": "veneto", "label": "Veneto", "codice_mef": "21",
+      "tipo_addizionale": "aliquota_unica", "aliquota": 1.23,
+      "nota_semplificazione": "Non applicata l'aliquota agevolata prevista per specifici casi di disabilita.",
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=21"
+    }
   ]
 }
