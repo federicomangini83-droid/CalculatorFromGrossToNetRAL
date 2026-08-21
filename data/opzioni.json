@@ -1,5 +1,7 @@
 {
-  "_meta": { "descrizione": "Opzioni del form" },
+  "_meta": {
+    "descrizione": "Opzioni del form. Toscana 2026 configurata con scaglioni progressivi ufficiali MEF; le altre Regioni mantengono temporaneamente l'aliquota semplificata gia presente nel prototipo."
+  },
   "tipo_contratto": [
     { "id": "indeterminato", "label": "Tempo indeterminato", "aliquota_inps_key": "aliquota_standard" },
     { "id": "determinato", "label": "Tempo determinato", "aliquota_inps_key": "aliquota_standard" },
@@ -10,8 +12,10 @@
     { "id": "oltre15", "label": "Oltre 15 dipendenti", "aliquota_inps_key": "aliquota_over15_dipendenti" }
   ],
   "mensilita": [
-    { "id": 12, "label": "12 mensilita" }, { "id": 13, "label": "13 mensilita" },
-    { "id": 14, "label": "14 mensilita" }, { "id": 15, "label": "15 mensilita" }
+    { "id": 12, "label": "12 mensilita" },
+    { "id": 13, "label": "13 mensilita" },
+    { "id": 14, "label": "14 mensilita" },
+    { "id": 15, "label": "15 mensilita" }
   ],
   "tipo_buono_pasto": [
     { "id": "nessuno", "label": "Nessuno" },
@@ -19,25 +23,36 @@
     { "id": "cartaceo", "label": "Cartaceo (esente fino 4 EUR)" }
   ],
   "regioni": [
-    { "id": "abruzzo", "label": "Abruzzo", "aliquota": 1.73 },
-    { "id": "basilicata", "label": "Basilicata", "aliquota": 1.23 },
-    { "id": "calabria", "label": "Calabria", "aliquota": 2.03 },
-    { "id": "campania", "label": "Campania", "aliquota": 2.03 },
-    { "id": "emilia", "label": "Emilia-Romagna", "aliquota": 1.33 },
-    { "id": "friuli", "label": "Friuli-Venezia Giulia", "aliquota": 1.23 },
-    { "id": "lazio", "label": "Lazio", "aliquota": 3.33 },
-    { "id": "liguria", "label": "Liguria", "aliquota": 1.23 },
-    { "id": "lombardia", "label": "Lombardia", "aliquota": 1.23 },
-    { "id": "marche", "label": "Marche", "aliquota": 1.23 },
-    { "id": "molise", "label": "Molise", "aliquota": 2.03 },
-    { "id": "piemonte", "label": "Piemonte", "aliquota": 1.62 },
-    { "id": "puglia", "label": "Puglia", "aliquota": 1.33 },
-    { "id": "sardegna", "label": "Sardegna", "aliquota": 1.23 },
-    { "id": "sicilia", "label": "Sicilia", "aliquota": 1.23 },
-    { "id": "toscana", "label": "Toscana", "aliquota": 1.42 },
-    { "id": "trentino", "label": "Trentino-Alto Adige", "aliquota": 1.23 },
-    { "id": "umbria", "label": "Umbria", "aliquota": 1.23 },
-    { "id": "valledaosta", "label": "Valle d'Aosta", "aliquota": 1.23 },
-    { "id": "veneto", "label": "Veneto", "aliquota": 1.23 }
+    { "id": "abruzzo", "label": "Abruzzo", "tipo_addizionale": "aliquota_unica", "aliquota": 1.73 },
+    { "id": "basilicata", "label": "Basilicata", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "calabria", "label": "Calabria", "tipo_addizionale": "aliquota_unica", "aliquota": 2.03 },
+    { "id": "campania", "label": "Campania", "tipo_addizionale": "aliquota_unica", "aliquota": 2.03 },
+    { "id": "emilia", "label": "Emilia-Romagna", "tipo_addizionale": "aliquota_unica", "aliquota": 1.33 },
+    { "id": "friuli", "label": "Friuli-Venezia Giulia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "lazio", "label": "Lazio", "tipo_addizionale": "aliquota_unica", "aliquota": 3.33 },
+    { "id": "liguria", "label": "Liguria", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "lombardia", "label": "Lombardia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "marche", "label": "Marche", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "molise", "label": "Molise", "tipo_addizionale": "aliquota_unica", "aliquota": 2.03 },
+    { "id": "piemonte", "label": "Piemonte", "tipo_addizionale": "aliquota_unica", "aliquota": 1.62 },
+    { "id": "puglia", "label": "Puglia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.33 },
+    { "id": "sardegna", "label": "Sardegna", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "sicilia", "label": "Sicilia", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    {
+      "id": "toscana",
+      "label": "Toscana",
+      "tipo_addizionale": "scaglioni_progressivi",
+      "scaglioni": [
+        { "da": 0, "a": 15000, "aliquota": 1.42 },
+        { "da": 15000, "a": 28000, "aliquota": 1.43 },
+        { "da": 28000, "a": 50000, "aliquota": 3.32 },
+        { "da": 50000, "a": null, "aliquota": 3.33 }
+      ],
+      "fonte": "https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/addregirpef.php?reg=17"
+    },
+    { "id": "trentino", "label": "Trentino-Alto Adige", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "umbria", "label": "Umbria", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "valledaosta", "label": "Valle d'Aosta", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 },
+    { "id": "veneto", "label": "Veneto", "tipo_addizionale": "aliquota_unica", "aliquota": 1.23 }
   ]
 }
