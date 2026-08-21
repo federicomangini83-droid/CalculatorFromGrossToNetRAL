@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/31300583/README.md)
 # Calcolatore Retribuzione Netta da RAL — 2026
 
 Prototipo di un calcolatore che, partendo dalla **Retribuzione Annua Lorda (RAL)**,
