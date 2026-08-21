@@ -1,18 +1,20 @@
 /* =========================================================================
-   MOTORE DI CALCOLO: dalla RAL al NETTO  (v2 - con detrazioni familiari,
-   trattamento integrativo, benefici esenti, mensilita aggiuntive)
+   MOTORE DI CALCOLO: dalla RAL al NETTO  (v3)
+   - senza familiari a carico (semplificazione voluta)
+   - CON cuneo fiscale 2026: somma integrativa (esente) + ulteriore detrazione
    -------------------------------------------------------------------------
    Sequenza:
      RAL
       -> (1) contributi INPS
-      -> (2) imponibile fiscale = RAL - contributi
+      -> (2) imponibile fiscale (= reddito complessivo) = RAL - contributi
       -> (3) IRPEF lorda a scaglioni
-      -> (4) detrazioni: lavoro dipendente (art.13) + familiari (art.12)
+      -> (4) detrazioni = lavoro dipendente (art.13) + ulteriore detrazione cuneo
       -> (5) IRPEF netta = max(0, lorda - detrazioni)
       -> (6) addizionali regionale + comunale
-      -> (7) NETTO ANNUO in busta = RAL - contributi - IRPEF netta - addizionali
-      -> (8) + trattamento integrativo (credito, si somma)
-      -> (9) benefici esenti (fringe + buoni pasto), calcolati a parte
+      -> (7) NETTO ANNUO busta = RAL - contributi - IRPEF netta - addizionali
+                                 + somma integrativa cuneo (esente)
+                                 + trattamento integrativo (se spetta)
+      -> (8) benefici esenti (fringe + buoni) calcolati a parte
    ========================================================================= */
 
 function arrotonda(n, d = 2) { const f = Math.pow(10, d); return Math.round(n * f) / f; }
@@ -41,33 +43,26 @@ function calcolaIrpefLorda(imponibile, p) {
   return arrotonda(imposta);
 }
 
-/* Aliquota marginale (serve per il netto delle mensilita aggiuntive) */
 function aliquotaMarginale(imponibile, p) {
   let aliq = 0;
-  for (const s of p.irpef_scaglioni.scaglioni) {
-    if (imponibile > s.da) aliq = s.aliquota;
-  }
+  for (const s of p.irpef_scaglioni.scaglioni) if (imponibile > s.da) aliq = s.aliquota;
   return aliq;
 }
 
 /* ---- (4a) DETRAZIONE LAVORO DIPENDENTE (art.13) con giorni e t.det. ---- */
 function calcolaDetrLavoro(reddito, p, giorni, tempoDeterminato) {
   const d = p.detrazioni_lavoro_dipendente;
-  let base = 0;
   for (const f of d.fasce) {
     const sup = (f.a === null) ? Infinity : f.a;
     if (reddito > f.da && reddito <= sup) {
+      let base;
       if (f.tipo === "fisso") base = f.importo;
       else { const R = reddito; base = Math.max(0, eval(f.formula)); }
-      // bonus ulteriore +65 (comma 1.1)
       const b = d.bonus_ulteriore;
       if (reddito > b.da && reddito <= b.a) base += b.importo;
-      // ragguaglio ai giorni di lavoro nell'anno
       let importo = base * (giorni / 365);
-      // minimo garantito (piu alto per tempo determinato)
       if (reddito <= 15000) {
         const min = tempoDeterminato ? f.minimo_tempo_determinato : f.minimo_garantito;
-        // il minimo si applica al valore ragguagliato solo se spettante
         if (importo > 0 && importo < min) importo = min * (giorni / 365);
       }
       return arrotonda(Math.max(0, importo));
@@ -76,106 +71,70 @@ function calcolaDetrLavoro(reddito, p, giorni, tempoDeterminato) {
   return 0;
 }
 
-/* ---- (4b) DETRAZIONI FAMILIARI (art.12) ---- */
-function calcolaDetrFamiliari(reddito, fam, p) {
-  const df = p.detrazioni_familiari;
-  let tot = 0;
-  const dett = { figli: 0, coniuge: 0, altri: 0 };
-
-  // FIGLI 21-29 (formula per figlio, soglia sale di 15.000 per figlio extra)
-  if (fam.numFigli > 0) {
-    const soglia = df.figli.soglia_base + (fam.numFigli - 1) * df.figli.incremento_soglia_per_figlio_extra;
-    if (reddito < soglia) {
-      const teor = fam.figliDisabili ? df.figli.teorico_disabile : df.figli.teorico;
-      dett.figli = arrotonda(teor * fam.numFigli * (soglia - reddito) / soglia);
-    }
-  }
-
-  // CONIUGE a carico (scaglioni art.12 c.1 lett.a, azzeramento oltre 80.000)
-  if (fam.coniuge) {
-    dett.coniuge = arrotonda(calcolaDetrConiuge(reddito));
-  }
-
-  // ALTRI FAMILIARI (ascendenti conviventi): 750 * (80000 - R)/80000
-  if (fam.numAltri > 0) {
-    if (reddito < df.altri_familiari.soglia) {
-      dett.altri = arrotonda(df.altri_familiari.teorico * fam.numAltri *
-        (df.altri_familiari.soglia - reddito) / df.altri_familiari.soglia);
-    }
-  }
-
-  tot = dett.figli + dett.coniuge + dett.altri;
-  return { totale: arrotonda(tot), dettaglio: dett };
+/* ---- (4b) CUNEO FISCALE: SOMMA INTEGRATIVA (esente, si somma al netto) ---- */
+function calcolaSommaIntegrativa(reddito, p) {
+  const s = p.cuneo_fiscale.somma_integrativa;
+  if (reddito > s.soglia_max) return 0;
+  // percentuale a scaglioni sull'intero reddito (non progressiva sui pezzi)
+  let perc = 0;
+  for (const sc of s.scaglioni) { if (reddito <= sc.fino_a) { perc = sc.percentuale; break; } }
+  return arrotonda(reddito * (perc / 100));
 }
 
-/* Coniuge a carico - scaglioni art.12 c.1 lett.a (importi 2026) */
-function calcolaDetrConiuge(R) {
-  if (R <= 15000) {
-    // 800 - 110 * (R/15000)
-    return 800 - 110 * (R / 15000);
-  } else if (R <= 40000) {
-    // 690 fisso, con maggiorazioni tra 29.000 e 35.200
-    let d = 690;
-    if (R > 29000 && R <= 29200) d += 10;
-    else if (R > 29200 && R <= 34700) d += 20;
-    else if (R > 34700 && R <= 35000) d += 30;
-    else if (R > 35000 && R <= 35100) d += 20;
-    else if (R > 35100 && R <= 35200) d += 10;
-    return d;
-  } else if (R <= 80000) {
-    // 690 * (80000 - R) / 40000
-    return 690 * (80000 - R) / 40000;
-  }
-  return 0;
+/* ---- (4c) CUNEO FISCALE: ULTERIORE DETRAZIONE (riduce IRPEF) ---- */
+function calcolaUlterioreDetrazione(reddito, p) {
+  const u = p.cuneo_fiscale.ulteriore_detrazione;
+  if (reddito <= u.soglia_min || reddito > u.soglia_max) return 0;
+  if (reddito <= u.soglia_piena) return u.importo_pieno;           // 1.000 fisso 20-32k
+  // decrescente 32-40k: 1000 * (40000 - R) / 8000
+  return arrotonda(u.importo_pieno * (u.soglia_max - reddito) / (u.soglia_max - u.soglia_piena));
 }
 
-/* ---- (8) TRATTAMENTO INTEGRATIVO (ex bonus 100) - si SOMMA al netto ---- */
+/* ---- TRATTAMENTO INTEGRATIVO (ex bonus 100, si somma) ---- */
 function calcolaTrattamentoIntegrativo(reddito, irpefLorda, detrLavoro, p) {
   const t = p.trattamento_integrativo;
   if (reddito > t.soglia_max) return 0;
-  // condizione capienza: IRPEF lorda deve superare la detrazione da lavoro
-  if (reddito <= t.soglia_pieno) {
-    return (irpefLorda > detrLavoro) ? t.importo_max : 0;
-  }
-  // fascia 15.000-28.000: spetta se detrazioni > IRPEF, per la differenza (max 1200)
+  if (reddito <= t.soglia_pieno) return (irpefLorda > detrLavoro) ? t.importo_max : 0;
   const diff = detrLavoro - irpefLorda;
-  if (diff > 0) return arrotonda(Math.min(diff, t.importo_max));
-  return 0;
+  return diff > 0 ? arrotonda(Math.min(diff, t.importo_max)) : 0;
 }
 
-/* ---- (9) BENEFICI ESENTI: fringe benefit + buoni pasto ---- */
+/* ---- BENEFICI ESENTI: fringe benefit + buoni pasto ---- */
 function calcolaBenefici(input, p) {
   const b = p.benefici_esenti;
-
-  // FRINGE BENEFIT: regola tutto-o-niente
   const sogliaFB = input.figliACarico ? b.fringe_benefit.soglia_con_figli : b.fringe_benefit.soglia_senza_figli;
   const fb = input.fringeBenefit || 0;
-  const fbEsente   = (fb <= sogliaFB) ? fb : 0;
-  const fbImponibile = (fb > sogliaFB) ? fb : 0; // se sfora, TUTTO imponibile
+  const fbEsente = (fb <= sogliaFB) ? fb : 0;
+  const fbImponibile = (fb > sogliaFB) ? fb : 0;
 
-  // BUONI PASTO: esente giornaliero, eccedenza tassata
-  let bpEsenteGiorno = 0, bpImponibileGiorno = 0;
+  let bpEsenteGiorno = 0;
   if (input.tipoBuonoPasto === "elettronico") bpEsenteGiorno = b.buoni_pasto.esente_elettronico;
   else if (input.tipoBuonoPasto === "cartaceo") bpEsenteGiorno = b.buoni_pasto.esente_cartaceo;
 
   const valBuono = input.valoreBuono || 0;
   const giorniBuono = input.giorniBuono || b.buoni_pasto.giorni_lavoro_default;
-  let bpEsenteAnnuo = 0, bpImponibileAnnuo = 0, bpMensile = 0;
+  let bpEsenteAnnuo = 0, bpImponibileAnnuo = 0, bpTotAnnuo = 0, bpMensile = 0;
   if (valBuono > 0 && bpEsenteGiorno > 0) {
     const esenteGiorno = Math.min(valBuono, bpEsenteGiorno);
-    const eccedenzaGiorno = Math.max(0, valBuono - bpEsenteGiorno);
+    const eccedenza = Math.max(0, valBuono - bpEsenteGiorno);
     bpEsenteAnnuo = arrotonda(esenteGiorno * giorniBuono);
-    bpImponibileAnnuo = arrotonda(eccedenzaGiorno * giorniBuono);
-    bpMensile = arrotonda(valBuono * (giorniBuono / 12)); // valore mensile in buoni
+    bpImponibileAnnuo = arrotonda(eccedenza * giorniBuono);
+    bpTotAnnuo = arrotonda(valBuono * giorniBuono);
+    bpMensile = arrotonda(bpTotAnnuo / 12);
   }
 
   return {
     fringeEsente: arrotonda(fbEsente),
     fringeImponibile: arrotonda(fbImponibile),
+    fringeSoglia: sogliaFB,
     buoniEsenteAnnuo: bpEsenteAnnuo,
     buoniImponibileAnnuo: bpImponibileAnnuo,
+    buoniTotAnnuo: bpTotAnnuo,
     buoniMensile: bpMensile,
-    imponibileAggiuntivo: arrotonda(fbImponibile + bpImponibileAnnuo)
+    buoniEsenteGiorno: bpEsenteGiorno,
+    valoreBuono: valBuono,
+    imponibileAggiuntivo: arrotonda(fbImponibile + bpImponibileAnnuo),
+    totaleEsente: arrotonda(fbEsente + bpEsenteAnnuo)
   };
 }
 
@@ -187,27 +146,21 @@ function calcolaNetto(input, p) {
   const giorni = input.giorni || 365;
   const tempoDet = (input.tipoContratto === "determinato");
 
-  // benefici (potrebbero aggiungere imponibile se sforano soglia)
   const benefici = calcolaBenefici(input, p);
 
-  // (1) contributi (calcolati sulla RAL; l'imponibile fringe eccedente e' gia' al netto contributi nel prototipo)
+  // (1) contributi
   const contributiInps = calcolaContributiInps(ral, input.aliquotaInps, p);
 
-  // (2) imponibile fiscale = RAL - contributi + eventuale imponibile da benefici sforati
+  // (2) imponibile fiscale (= reddito complessivo) + eventuale imponibile da benefici sforati
   const imponibileFiscale = arrotonda(ral - contributiInps + benefici.imponibileAggiuntivo);
 
   // (3) IRPEF lorda
   const irpefLorda = calcolaIrpefLorda(imponibileFiscale, p);
 
-  // (4) detrazioni
+  // (4) detrazioni: lavoro + ulteriore detrazione cuneo
   const detrLavoro = calcolaDetrLavoro(imponibileFiscale, p, giorni, tempoDet);
-  const famObj = calcolaDetrFamiliari(imponibileFiscale, {
-    numFigli: input.numFigli || 0,
-    figliDisabili: input.figliDisabili || false,
-    coniuge: input.coniuge || false,
-    numAltri: input.numAltri || 0
-  }, p);
-  const detrazioniTotali = arrotonda(detrLavoro + famObj.totale);
+  const ulterioreDetr = calcolaUlterioreDetrazione(imponibileFiscale, p);
+  const detrazioniTotali = arrotonda(detrLavoro + ulterioreDetr);
 
   // (5) IRPEF netta
   const irpefNetta = arrotonda(Math.max(0, irpefLorda - detrazioniTotali));
@@ -216,19 +169,20 @@ function calcolaNetto(input, p) {
   const addReg = arrotonda(imponibileFiscale * (input.aliquotaRegionale / 100));
   const addCom = arrotonda(imponibileFiscale * (input.aliquotaComunale / 100));
 
-  // (7) netto annuo in busta
-  const nettoAnnuo = arrotonda(ral - contributiInps - irpefNetta - addReg - addCom);
-
-  // (8) trattamento integrativo (si somma)
+  // cuneo: somma integrativa (esente, si somma) + trattamento integrativo
+  const sommaIntegrativa = calcolaSommaIntegrativa(imponibileFiscale, p);
   const trattIntegrativo = calcolaTrattamentoIntegrativo(imponibileFiscale, irpefLorda, detrLavoro, p);
-  const nettoAnnuoConBonus = arrotonda(nettoAnnuo + trattIntegrativo);
+  const creditiEsenti = arrotonda(sommaIntegrativa + trattIntegrativo);
 
-  // --- SDOPPIAMENTO MENSILITA: ordinaria (con detrazioni) vs aggiuntiva (senza) ---
+  // (7) netto annuo busta (i crediti esenti si sommano)
+  const nettoAnnuo = arrotonda(ral - contributiInps - irpefNetta - addReg - addCom + creditiEsenti);
+
+  // --- SDOPPIAMENTO MENSILITA ---
   const mensilita = input.mensilita;
   const mesiExtra = Math.max(0, mensilita - 12);
   const aliqMarg = aliquotaMarginale(imponibileFiscale, p);
 
-  // netto di UNA mensilita aggiuntiva (13/14/15): niente detrazioni
+  // netto di UNA mensilita aggiuntiva (13/14/15): subisce solo INPS + IRPEF marginale + addizionali, NIENTE detrazioni/crediti
   const lordoMese = ral / mensilita;
   const contrMese = arrotonda(lordoMese * (input.aliquotaInps / 100));
   const imponMese = lordoMese - contrMese;
@@ -236,25 +190,25 @@ function calcolaNetto(input, p) {
   const addMese = imponMese * ((input.aliquotaRegionale + input.aliquotaComunale) / 100);
   const nettoMensilitaAggiuntiva = arrotonda(lordoMese - contrMese - irpefMese - addMese);
 
-  // i 12 mesi ordinari assorbono le detrazioni -> netto ordinario piu alto
+  // i 12 mesi ordinari assorbono detrazioni + crediti -> netto ordinario piu alto
   const nettoMesiExtraTot = nettoMensilitaAggiuntiva * mesiExtra;
   const nettoOrdinarioMese = arrotonda((nettoAnnuo - nettoMesiExtraTot) / 12);
 
   const tfr = arrotonda((ral / p.tfr.divisore) - ral * (p.tfr.contributo_fondo_garanzia / 100));
   const totaleTasse = arrotonda(irpefNetta + addReg + addCom);
+  const nettoInBusta = arrotonda(ral - contributiInps - totaleTasse); // senza crediti (per la torta)
 
   return {
     ral, contributiInps, imponibileFiscale, irpefLorda,
-    detrLavoro, detrFamiliari: famObj.totale, detrFamDettaglio: famObj.dettaglio,
-    detrazioniTotali, irpefNetta, addReg, addCom, totaleTasse,
-    nettoAnnuo, trattIntegrativo, nettoAnnuoConBonus,
-    nettoOrdinarioMese, nettoMensilitaAggiuntiva, mesiExtra, mensilita,
+    detrLavoro, ulterioreDetr, detrazioniTotali, irpefNetta,
+    addReg, addCom, totaleTasse,
+    sommaIntegrativa, trattIntegrativo, creditiEsenti,
+    nettoInBusta, nettoAnnuo,
+    nettoOrdinarioMese, nettoMensilitaAggiuntiva, mesiExtra, mensilita, lordoMese: arrotonda(lordoMese),
     tfr, benefici,
     aliquotaEffettiva: arrotonda((totaleTasse / ral) * 100),
     percNetto: arrotonda((nettoAnnuo / ral) * 100)
   };
 }
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { calcolaNetto };
-}
+if (typeof module !== "undefined" && module.exports) module.exports = { calcolaNetto };
