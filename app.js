@@ -1,4 +1,4 @@
-/* app.js v2 - collega interfaccia, dati e motore (con nuove voci) */
+/* app.js v3 - cuneo fiscale, benefici separati, ripartizione mensilita chiara */
 
 let PARAMETRI = null, OPZIONI = null, grafico = null;
 
@@ -20,11 +20,8 @@ async function inizializza() {
   popolaSelect("regione", OPZIONI.regioni, "toscana");
   popolaSelect("tipoBuonoPasto", OPZIONI.tipo_buono_pasto, "nessuno");
 
-  // attiva il campo "giorni" solo se contratto = tempo determinato
   document.getElementById("tipoContratto").addEventListener("change", toggleGiorni);
-  // mostra i campi buono pasto solo se ne selezioni un tipo
   document.getElementById("tipoBuonoPasto").addEventListener("change", toggleBuono);
-
   document.getElementById("btnCalcola").addEventListener("click", eseguiCalcolo);
 }
 
@@ -58,9 +55,7 @@ function determinaAliquotaInps() {
 function eseguiCalcolo() {
   const ral = parseFloat(document.getElementById("ral").value);
   if (isNaN(ral) || ral <= 0) { alert("Inserisci una RAL valida."); return; }
-
   const regione = OPZIONI.regioni.find(r => r.id === document.getElementById("regione").value);
-  const numFigli = parseInt(document.getElementById("numFigli").value) || 0;
 
   const input = {
     ral,
@@ -70,17 +65,12 @@ function eseguiCalcolo() {
     mensilita: parseInt(document.getElementById("mensilita").value),
     tipoContratto: document.getElementById("tipoContratto").value,
     giorni: parseInt(document.getElementById("giorni").value) || 365,
-    coniuge: document.getElementById("coniuge").checked,
-    numFigli,
-    figliDisabili: document.getElementById("figliDisabili").checked,
-    numAltri: parseInt(document.getElementById("numAltri").value) || 0,
-    figliACarico: numFigli > 0,
     fringeBenefit: parseFloat(document.getElementById("fringeBenefit").value) || 0,
     tipoBuonoPasto: document.getElementById("tipoBuonoPasto").value,
     valoreBuono: parseFloat(document.getElementById("valoreBuono").value) || 0,
-    giorniBuono: parseInt(document.getElementById("giorniBuono").value) || 220
+    giorniBuono: parseInt(document.getElementById("giorniBuono").value) || 220,
+    figliACarico: false
   };
-
   mostraRisultati(calcolaNetto(input, PARAMETRI));
 }
 
@@ -88,59 +78,97 @@ function mostraRisultati(r) {
   document.getElementById("risultati").style.display = "block";
 
   document.getElementById("outNettoAnnuo").textContent = euro(r.nettoAnnuo);
-  document.getElementById("outNettoOrd").textContent = euro(r.nettoOrdinarioMese);
+  document.getElementById("outPercNetto").textContent = "(" + r.percNetto + "% della RAL)";
 
-  // mensilita aggiuntive
+  // ripartizione mensilita
+  document.getElementById("outNettoOrd").textContent = euro(r.nettoOrdinarioMese);
   if (r.mesiExtra > 0) {
-    document.getElementById("wrapMensExtra").style.display = "flex";
-    const nomi = { 1: "13ª", 2: "13ª e 14ª", 3: "13ª, 14ª e 15ª" };
-    document.getElementById("labelMensExtra").textContent =
-      "Netto mensilità aggiuntiva (" + (nomi[r.mesiExtra] || "extra") + ")";
-    document.getElementById("outNettoExtra").textContent = euro(r.nettoMensilitaAggiuntiva);
+    document.getElementById("rowExtra").style.display = "flex";
+    document.getElementById("badgeExtra").textContent = r.mesiExtra + "\u00D7";
+    const nomi = { 1: "13ª mensilità", 2: "13ª e 14ª mensilità", 3: "13ª, 14ª e 15ª mensilità" };
+    document.getElementById("descExtra").innerHTML =
+      (nomi[r.mesiExtra] || "Mensilità aggiuntive") + "<br><small>senza detrazioni: netto più basso</small>";
+    document.getElementById("outNettoExtra").textContent = euro(r.nettoMensilitaAggiuntiva) + " cad.";
   } else {
-    document.getElementById("wrapMensExtra").style.display = "none";
+    document.getElementById("rowExtra").style.display = "none";
   }
 
+  // tabella
   document.getElementById("outRal").textContent = euro(r.ral);
   document.getElementById("outInps").textContent = euro(r.contributiInps);
   document.getElementById("outIrpef").textContent = euro(r.irpefNetta);
   document.getElementById("outAddReg").textContent = euro(r.addReg);
   document.getElementById("outAddCom").textContent = euro(r.addCom);
+  if (r.creditiEsenti > 0) {
+    document.getElementById("rowCredito").style.display = "table-row";
+    document.getElementById("outCrediti").textContent = "+ " + euro(r.creditiEsenti);
+  } else document.getElementById("rowCredito").style.display = "none";
   document.getElementById("outNettoRiga").textContent = euro(r.nettoAnnuo);
 
+  // dettaglio
   document.getElementById("outImponibile").textContent = euro(r.imponibileFiscale);
   document.getElementById("outIrpefLorda").textContent = euro(r.irpefLorda);
   document.getElementById("outDetrLav").textContent = euro(r.detrLavoro);
-  document.getElementById("outDetrFam").textContent = euro(r.detrFamiliari);
+  document.getElementById("liUlt").style.display = (r.ulterioreDetr > 0) ? "flex" : "none";
+  document.getElementById("outUltDetr").textContent = euro(r.ulterioreDetr);
   document.getElementById("outTotTasse").textContent = euro(r.totaleTasse);
   document.getElementById("outAliqEff").textContent = r.aliquotaEffettiva + " %";
 
-  // bonus 100 (si somma)
+  // cuneo somma integrativa
+  if (r.sommaIntegrativa > 0) {
+    document.getElementById("boxSomma").style.display = "flex";
+    document.getElementById("outSomma").textContent = "+ " + euro(r.sommaIntegrativa) + "/anno";
+  } else document.getElementById("boxSomma").style.display = "none";
+  // trattamento integrativo
   if (r.trattIntegrativo > 0) {
     document.getElementById("boxBonus").style.display = "flex";
     document.getElementById("outBonus").textContent = "+ " + euro(r.trattIntegrativo) + "/anno";
   } else document.getElementById("boxBonus").style.display = "none";
 
-  // benefici esenti (a parte)
-  const totBenefEsente = r.benefici.fringeEsente + r.benefici.buoniEsenteAnnuo;
-  if (totBenefEsente > 0 || r.benefici.imponibileAggiuntivo > 0) {
-    document.getElementById("boxBenefici").style.display = "flex";
-    let txt = "+ " + euro(totBenefEsente) + "/anno (esente)";
-    if (r.benefici.buoniMensile > 0) txt += " &middot; buoni " + euro(r.benefici.buoniMensile) + "/mese";
-    document.getElementById("outBenefici").innerHTML = txt;
-    if (r.benefici.imponibileAggiuntivo > 0)
-      document.getElementById("labelBenefici").textContent =
-        "Benefici (parte eccedente TASSATA: " + euro(r.benefici.imponibileAggiuntivo) + ")";
-    else
-      document.getElementById("labelBenefici").textContent = "Benefici esenti (welfare + buoni pasto)";
-  } else document.getElementById("boxBenefici").style.display = "none";
+  // BENEFICI (sezioni separate + totale)
+  const b = r.benefici;
+  const haBuoni = b.buoniTotAnnuo > 0;
+  const haFringe = (b.fringeEsente > 0 || b.fringeImponibile > 0);
+  if (haBuoni || haFringe) {
+    document.getElementById("beneficiPanel").style.display = "block";
+
+    // Buoni pasto
+    if (haBuoni) {
+      document.getElementById("benBuoni").style.display = "flex";
+      document.getElementById("benBuoniSub").style.display = "block";
+      document.getElementById("outBuoni").textContent = euro(b.buoniMensile) + "/mese";
+      let sub = euro(b.valoreBuono) + "/giorno &middot; esente fino " + euro(b.buoniEsenteGiorno) +
+                " &middot; totale anno " + euro(b.buoniTotAnnuo);
+      if (b.buoniImponibileAnnuo > 0) sub += " &middot; di cui tassato " + euro(b.buoniImponibileAnnuo);
+      document.getElementById("benBuoniSub").innerHTML = sub;
+    } else {
+      document.getElementById("benBuoni").style.display = "none";
+      document.getElementById("benBuoniSub").style.display = "none";
+    }
+
+    // Fringe benefit
+    if (haFringe) {
+      document.getElementById("benFringe").style.display = "flex";
+      document.getElementById("benFringeSub").style.display = "block";
+      const totFringe = b.fringeEsente + b.fringeImponibile;
+      document.getElementById("outFringe").textContent = euro(totFringe) + "/anno";
+      if (b.fringeImponibile > 0)
+        document.getElementById("benFringeSub").innerHTML =
+          "&#9888;&#65039; supera la soglia di " + euro(b.fringeSoglia) + ": <strong>l'intero importo &egrave; tassato</strong>";
+      else
+        document.getElementById("benFringeSub").innerHTML =
+          "entro la soglia di " + euro(b.fringeSoglia) + ": esente";
+    } else {
+      document.getElementById("benFringe").style.display = "none";
+      document.getElementById("benFringeSub").style.display = "none";
+    }
+
+    document.getElementById("outBenTot").textContent = euro(b.totaleEsente) + "/anno";
+  } else {
+    document.getElementById("beneficiPanel").style.display = "none";
+  }
 
   document.getElementById("outTfr").textContent = euro(r.tfr);
-
-  // nota assegno unico se dichiara figli
-  document.getElementById("notaAuu").style.display =
-    (document.getElementById("numFigli").value > 0) ? "block" : "none";
-
   disegnaGrafico(r);
 }
 
@@ -149,7 +177,7 @@ function disegnaGrafico(r) {
   const dati = {
     labels: ["Netto in busta", "Contributi INPS", "IRPEF netta", "Add. regionale", "Add. comunale"],
     datasets: [{
-      data: [r.nettoAnnuo, r.contributiInps, r.irpefNetta, r.addReg, r.addCom],
+      data: [r.nettoInBusta, r.contributiInps, r.irpefNetta, r.addReg, r.addCom],
       backgroundColor: ["#2e9e5b", "#e8913a", "#d94f4f", "#7b5cc4", "#4aa3c7"],
       borderWidth: 2, borderColor: "#fff"
     }]
