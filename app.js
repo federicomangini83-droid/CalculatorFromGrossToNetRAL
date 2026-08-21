@@ -255,10 +255,11 @@ function generaAudit(chiave, r) {
     },
     mensExtra: {
       t: "Mensilita aggiuntive",
-      b: `Le mensilita aggiuntive non beneficiano delle detrazioni. Per distribuire ` +
-         `l'addizionale regionale progressiva si usa l'aliquota regionale effettiva annua ` +
-         `(${num(r.aliquotaRegionaleEffettiva, 4)}%).<br>` +
-         `<code>${euro(r.lordoMese)} - contributi - IRPEF - addizionali = ` +
+      b: `Le mensilita aggiuntive non beneficiano delle detrazioni e non subiscono ` +
+         `la trattenuta delle addizionali regionale e comunale, che restano ` +
+         `interamente a carico delle mensilita ordinarie (il netto annuo ` +
+         `complessivo non cambia).<br>` +
+         `<code>${euro(r.lordoMese)} - contributi - IRPEF = ` +
          `${euro(r.nettoMensilitaAggiuntiva)}</code>`,
       f: "Ripartizione rappresentativa del netto annuo"
     },
