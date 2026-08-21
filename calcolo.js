@@ -177,12 +177,8 @@ function calcolaAddizionaleRegionale(imponibile, input) {
   let dettaglio = [];
   let impostaLorda = 0;
 
-  if (Array.isArray(scaglioni) && scaglioni.length > 0) {
   function calcoloProgressivo(scaglioni) {
     let totale = 0;
-    const dettaglio = [];
-
-    for (const s of scaglioni) {
     const righe = [];
     for (const s of scaglioni || []) {
       const sup = s.a === null ? Infinity : s.a;
@@ -190,13 +186,6 @@ function calcolaAddizionaleRegionale(imponibile, input) {
         const base = Math.min(imponibile, sup) - s.da;
         const imposta = base * s.aliquota / 100;
         totale += imposta;
-        dettaglio.push({
-          da: s.da,
-          a: s.a,
-          aliquota: s.aliquota,
-          base: arrotonda(base),
-          imposta: arrotonda(imposta)
-        });
         righe.push({ da: s.da, a: s.a, aliquota: s.aliquota,
           base: arrotonda(base), imposta: arrotonda(imposta) });
       }
@@ -272,11 +261,6 @@ function calcolaAddizionaleRegionale(imponibile, input) {
     riduzioni.push({ descrizione: "Detrazione su redditi oltre 50.000 euro", importo: arrotonda(Math.max(0, d)) });
   }
 
-    return {
-      valore: arrotonda(totale),
-      tipo: "scaglioni_progressivi",
-      dettaglio
-    };
   if (speciali.detrazione_fissa &&
       imponibile > speciali.detrazione_fissa.da_reddito &&
       imponibile <= speciali.detrazione_fissa.a_reddito) {
@@ -284,13 +268,8 @@ function calcolaAddizionaleRegionale(imponibile, input) {
     riduzioni.push({ descrizione: "Detrazione fissa regionale", importo: speciali.detrazione_fissa.importo });
   }
 
-  const aliquota = input.aliquotaRegionale || 0;
-  const imposta = arrotonda(imponibile * aliquota / 100);
   const valore = arrotonda(Math.max(0, impostaLorda - detrazione));
   return {
-    valore: imposta,
-    tipo: "aliquota_unica",
-    dettaglio: [{ da: 0, a: null, aliquota, base: imponibile, imposta }]
     valore,
     tipo,
     dettaglio,
