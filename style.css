@@ -66,6 +66,7 @@ body { font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 .tabella-voci td { padding:9px 6px; border-bottom:1px solid var(--bordo); }
 .tabella-voci td:last-child { text-align:right; font-weight:600; }
 .riga-ral td { font-weight:700; color:var(--blu-scuro); }
+.riga-lordopost td { font-weight:700; color:var(--blu-scuro); background:#f6f8fc; border-top:1px solid var(--bordo); }
 .riga-credito td { color:var(--netto); font-weight:600; }
 .riga-netto td { font-weight:800; color:var(--netto); border-top:2px solid var(--netto); }
 
