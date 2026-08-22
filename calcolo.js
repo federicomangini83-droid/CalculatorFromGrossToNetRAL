@@ -351,6 +351,13 @@ function calcolaNetto(input, p) {
   const totaleTasse = arrotonda(irpefNetta + addReg + addCom);
   const nettoInBusta = arrotonda(ral - contributiInps - totaleTasse);
 
+  /* Netto "effettivo" mensile: include anche il valore dei benefici esenti
+     (buoni pasto, fringe benefit) che non transitano in busta paga, spalmato
+     sul numero di mensilita selezionato (12/13/14/15). */
+  const nettoEffettivoMensile = arrotonda(
+    (nettoAnnuo + benefici.totaleEsente) / mensilita
+  );
+
   return {
     ral,
     contributiInps,
@@ -379,6 +386,7 @@ function calcolaNetto(input, p) {
     nettoAnnuo,
     nettoOrdinarioMese,
     nettoMensilitaAggiuntiva,
+    nettoEffettivoMensile,
     mesiExtra,
     mensilita,
     lordoMese: arrotonda(lordoMese),
