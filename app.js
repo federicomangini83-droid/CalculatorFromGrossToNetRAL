@@ -281,6 +281,16 @@ function generaAudit(chiave, r) {
       t: "TFR accantonato",
       b: `<code>${euro(r.ral)} / 13,5 - ${euro(r.ral)} x 0,50% = ${euro(r.tfr)}</code>`,
       f: "Art. 2120 Codice Civile"
+    },
+    nettoEffMensile: {
+      t: "Netto effettivo mensile",
+      b: `Somma il netto annuo in busta e il valore di tutti i benefici esenti ` +
+         `(buoni pasto, fringe benefit), poi divide per le mensilit&agrave; ` +
+         `selezionate (${r.mensilita}). Rappresenta la disponibilit&agrave; ` +
+         `economica media mensile complessiva, non solo l'importo in busta ` +
+         `paga.<br><code>(${euro(r.nettoAnnuo)} + ${euro(r.benefici.totaleEsente)}) / ` +
+         `${r.mensilita} = ${euro(r.nettoEffettivoMensile)}</code>`,
+      f: "Indicatore aggregato, non corrisponde a un importo effettivamente accreditato in un unico mese"
     }
   };
 
@@ -375,6 +385,8 @@ function mostraRisultati(r) {
 
   mostraBenefici(r.benefici);
   document.getElementById("outTfr").textContent = euro(r.tfr);
+  document.getElementById("outNettoEffMensile").textContent =
+    `${euro(r.nettoEffettivoMensile)} x ${r.mensilita}`;
   disegnaGrafico(r);
 }
 
